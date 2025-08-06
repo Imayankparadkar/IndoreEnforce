@@ -2,6 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom animations */
+@keyframes marquee {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Government website styling - remove gradients */
+.bg-gradient-to-r {
+  background: #1e40af !important; /* solid blue */
+}
+
+.bg-gradient-to-br {
+  background: #1e40af !important; /* solid blue */
+}
+
+/* Override gradient classes with solid colors */
+.from-blue-600.to-purple-700 {
+  background: #1e40af !important;
+}
+
+.from-green-600.to-blue-700 {
+  background: #059669 !important;
+}
+
+.from-purple-600.to-pink-600 {
+  background: #7c3aed !important;
+}
+
+/* Professional government styling */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.govt-header {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  border-bottom: 3px solid #f59e0b;
+}
+
+/* Card enhancements */
+.card-professional {
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Button styles for government website */
+.btn-primary {
+  background-color: #1e40af;
+  border: 1px solid #1e40af;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* Remove all gradients from buttons and cards */
+.bg-gradient-to-r,
+.bg-gradient-to-l,
+.bg-gradient-to-t,
+.bg-gradient-to-b,
+.bg-gradient-to-tr,
+.bg-gradient-to-tl,
+.bg-gradient-to-br,
+.bg-gradient-to-bl {
+  background-image: none !important;
+}
+
 :root {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(20, 14.3%, 4.1%);

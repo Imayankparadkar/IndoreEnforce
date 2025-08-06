@@ -1,99 +1,160 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "../../contexts/AuthContext";
 import { useLanguage } from "../../contexts/LanguageContext";
-import { analyzeScamReport } from "../../lib/gemini";
+import { useAuth } from "../../contexts/AuthContext";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { analyzeScamReport } from "../../lib/gemini";
 import { 
   Shield, 
-  FileText, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  AlertCircle,
+  AlertTriangle, 
+  Upload, 
+  Phone,
+  CreditCard,
+  Mail,
+  FileText,
   CheckCircle,
-  Upload,
-  Bot,
-  Users,
-  Clock
+  Loader2,
+  Brain,
+  TrendingUp,
+  MapPin,
+  Calendar,
+  DollarSign
 } from "lucide-react";
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
 
-interface ReportForm {
+interface ScamReportForm {
   reporterName: string;
   reporterContact: string;
+  reporterEmail: string;
   scamType: string;
   description: string;
   amount: string;
   location: string;
-  suspiciousNumbers: string;
-  suspiciousUPIs: string;
-  evidenceFiles: File[];
+  suspiciousNumbers: string[];
+  suspiciousUPIs: string[];
+  evidenceFiles: FileList | null;
 }
 
 export function EnhancedBrahmaNet() {
+  const { t, currentLanguage } = useLanguage();
   const { currentUser } = useAuth();
-  const { t } = useLanguage();
   const { toast } = useToast();
-  const [reportForm, setReportForm] = useState<ReportForm>({
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [formData, setFormData] = useState<ScamReportForm>({
     reporterName: '',
     reporterContact: '',
+    reporterEmail: currentUser?.email || '',
     scamType: '',
     description: '',
     amount: '',
-    location: '',
-    suspiciousNumbers: '',
-    suspiciousUPIs: '',
-    evidenceFiles: []
+    location: 'Indore',
+    suspiciousNumbers: [''],
+    suspiciousUPIs: [''],
+    evidenceFiles: null
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [aiAnalysis, setAiAnalysis] = useState<any>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
 
-  const scamTypes = [
-    { value: 'phoneScam', label: t('phoneScam') },
-    { value: 'emailPhishing', label: t('emailPhishing') },
-    { value: 'socialMediaFraud', label: t('socialMediaFraud') },
-    { value: 'onlineShopping', label: t('onlineShopping') },
-    { value: 'bankingFraud', label: t('bankingFraud') },
-    { value: 'cryptoScam', label: t('cryptoScam') },
-    { value: 'jobFraud', label: 'Job Fraud' },
-    { value: 'loanFraud', label: 'Loan Fraud' },
-    { value: 'matrimonialFraud', label: 'Matrimonial Fraud' },
-    { value: 'other', label: 'Other' }
-  ];
+  const submitReportMutation = useMutation({
+    mutationFn: async (reportData: FormData) => {
+      const response = await fetch('/api/scam-reports', {
+        method: 'POST',
+        body: reportData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit report');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: currentLanguage === 'hi' ? "रिपोर्ट सफलतापूर्वक जमा की गई" : "Report Submitted Successfully",
+        description: currentLanguage === 'hi' 
+          ? "आपकी रिपोर्ट सफलतापूर्वक दर्ज हो गई है। हमारी टीम जल्द ही इसकी जांच करेगी।"
+          : "Your report has been successfully registered. Our team will investigate it soon.",
+      });
+      
+      // Reset form
+      setFormData({
+        reporterName: '',
+        reporterContact: '',
+        reporterEmail: currentUser?.email || '',
+        scamType: '',
+        description: '',
+        amount: '',
+        location: 'Indore',
+        suspiciousNumbers: [''],
+        suspiciousUPIs: [''],
+        evidenceFiles: null
+      });
+      setAiAnalysis(null);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/scam-reports'] });
+    },
+    onError: (error) => {
+      toast({
+        title: currentLanguage === 'hi' ? "त्रुटि" : "Error",
+        description: currentLanguage === 'hi' 
+          ? "रिपोर्ट जमा करने में समस्या हुई। कृपया पुनः प्रयास करें।"
+          : "There was a problem submitting your report. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
-  const handleInputChange = (field: keyof ReportForm, value: string) => {
-    setReportForm(prev => ({
+  const handleInputChange = (field: keyof ScamReportForm, value: string | FileList | null) => {
+    setFormData(prev => ({
       ...prev,
       [field]: value
     }));
   };
 
-  const handleFileUpload = (files: FileList | null) => {
-    if (files) {
-      setReportForm(prev => ({
-        ...prev,
-        evidenceFiles: Array.from(files)
-      }));
-    }
+  const handleArrayInputChange = (field: 'suspiciousNumbers' | 'suspiciousUPIs', index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].map((item, i) => i === index ? value : item)
+    }));
+  };
+
+  const addArrayField = (field: 'suspiciousNumbers' | 'suspiciousUPIs') => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: [...prev[field], '']
+    }));
+  };
+
+  const removeArrayField = (field: 'suspiciousNumbers' | 'suspiciousUPIs', index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index)
+    }));
   };
 
   const handleAIAnalysis = async () => {
-    if (!reportForm.description || !reportForm.scamType) {
+    if (!formData.description || !formData.scamType) {
       toast({
-        title: "Incomplete Information",
-        description: "Please provide scam type and description for AI analysis",
-        variant: "destructive"
+        title: currentLanguage === 'hi' ? "अधूरी जानकारी" : "Incomplete Information",
+        description: currentLanguage === 'hi' 
+          ? "कृपया स्कैम का प्रकार और विवरण भरें।"
+          : "Please fill in the scam type and description.",
+        variant: "destructive",
       });
       return;
     }
@@ -101,89 +162,79 @@ export function EnhancedBrahmaNet() {
     setIsAnalyzing(true);
     try {
       const analysis = await analyzeScamReport({
-        scamType: reportForm.scamType,
-        description: reportForm.description,
-        amount: reportForm.amount ? parseInt(reportForm.amount) : null,
-        location: reportForm.location,
-        suspiciousNumbers: reportForm.suspiciousNumbers.split(',').filter(n => n.trim()),
-        suspiciousUPIs: reportForm.suspiciousUPIs.split(',').filter(u => u.trim())
+        scamType: formData.scamType,
+        description: formData.description,
+        amount: formData.amount,
+        location: formData.location,
+        suspiciousNumbers: formData.suspiciousNumbers.filter(n => n.trim()),
+        suspiciousUPIs: formData.suspiciousUPIs.filter(u => u.trim())
       });
+      
       setAiAnalysis(analysis);
+      
       toast({
-        title: "AI Analysis Complete",
-        description: "Your report has been analyzed for risk assessment and recommendations."
+        title: currentLanguage === 'hi' ? "AI विश्लेषण पूर्ण" : "AI Analysis Complete",
+        description: currentLanguage === 'hi' 
+          ? "आपकी रिपोर्ट का AI विश्लेषण तैयार है।"
+          : "AI analysis of your report is ready.",
       });
     } catch (error) {
-      console.error('AI Analysis failed:', error);
       toast({
-        title: "Analysis Failed",
-        description: "Unable to analyze with AI. Report will be processed manually.",
-        variant: "destructive"
+        title: currentLanguage === 'hi' ? "विश्लेषण त्रुटि" : "Analysis Error",
+        description: currentLanguage === 'hi' 
+          ? "AI विश्लेषण में समस्या हुई।"
+          : "There was a problem with AI analysis.",
+        variant: "destructive",
       });
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const handleSubmitReport = async () => {
-    if (!reportForm.reporterName || !reportForm.reporterContact || !reportForm.scamType || !reportForm.description) {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.reporterName || !formData.reporterContact || !formData.scamType || !formData.description) {
       toast({
-        title: "Missing Required Fields",
-        description: "Please fill in all required fields marked with *",
-        variant: "destructive"
+        title: currentLanguage === 'hi' ? "आवश्यक फील्ड गुम" : "Required Fields Missing",
+        description: currentLanguage === 'hi' 
+          ? "कृपया सभी आवश्यक फील्ड भरें।"
+          : "Please fill all required fields.",
+        variant: "destructive",
       });
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      // Save to Firebase Firestore
-      const reportData = {
-        ...reportForm,
-        suspiciousNumbers: reportForm.suspiciousNumbers.split(',').filter(n => n.trim()),
-        suspiciousUPIs: reportForm.suspiciousUPIs.split(',').filter(u => u.trim()),
-        amount: reportForm.amount ? parseInt(reportForm.amount) : null,
-        status: 'new',
-        riskLevel: aiAnalysis?.riskLevel || 'medium',
-        aiAnalysis: aiAnalysis || null,
-        reporterId: currentUser?.uid || 'anonymous',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      const docRef = await addDoc(collection(db, 'scamReports'), reportData);
-
-      toast({
-        title: "Report Submitted Successfully",
-        description: `Your report has been submitted with ID: ${docRef.id.slice(-6).toUpperCase()}. You will receive updates on your registered contact.`
+    const reportFormData = new FormData();
+    reportFormData.append('reporterName', formData.reporterName);
+    reportFormData.append('reporterContact', formData.reporterContact);
+    reportFormData.append('reporterEmail', formData.reporterEmail);
+    reportFormData.append('scamType', formData.scamType);
+    reportFormData.append('description', formData.description);
+    reportFormData.append('amount', formData.amount);
+    reportFormData.append('location', formData.location);
+    reportFormData.append('suspiciousNumbers', JSON.stringify(formData.suspiciousNumbers.filter(n => n.trim())));
+    reportFormData.append('suspiciousUPIs', JSON.stringify(formData.suspiciousUPIs.filter(u => u.trim())));
+    
+    if (formData.evidenceFiles) {
+      Array.from(formData.evidenceFiles).forEach(file => {
+        reportFormData.append('evidence', file);
       });
-
-      // Reset form
-      setReportForm({
-        reporterName: '',
-        reporterContact: '',
-        scamType: '',
-        description: '',
-        amount: '',
-        location: '',
-        suspiciousNumbers: '',
-        suspiciousUPIs: '',
-        evidenceFiles: []
-      });
-      setAiAnalysis(null);
-      setCurrentStep(1);
-
-    } catch (error) {
-      console.error('Report submission failed:', error);
-      toast({
-        title: "Submission Failed",
-        description: "Unable to submit report. Please try again or contact support.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
     }
+
+    submitReportMutation.mutate(reportFormData);
   };
+
+  const scamTypes = [
+    { value: 'upi_fraud', label: currentLanguage === 'hi' ? 'UPI/पेमेंट धोखाधड़ी' : 'UPI/Payment Fraud' },
+    { value: 'phone_scam', label: currentLanguage === 'hi' ? 'फोन कॉल घोटाला' : 'Phone Call Scam' },
+    { value: 'email_phishing', label: currentLanguage === 'hi' ? 'ईमेल फिशिंग' : 'Email Phishing' },
+    { value: 'social_media', label: currentLanguage === 'hi' ? 'सोशल मीडिया फ्रॉड' : 'Social Media Fraud' },
+    { value: 'investment_scam', label: currentLanguage === 'hi' ? 'निवेश घोटाला' : 'Investment Scam' },
+    { value: 'online_shopping', label: currentLanguage === 'hi' ? 'ऑनलाइन शॉपिंग फ्रॉड' : 'Online Shopping Fraud' },
+    { value: 'identity_theft', label: currentLanguage === 'hi' ? 'पहचान चोरी' : 'Identity Theft' },
+    { value: 'other', label: currentLanguage === 'hi' ? 'अन्य' : 'Other' }
+  ];
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -217,348 +268,417 @@ export function EnhancedBrahmaNet() {
     >
       {/* Header */}
       <motion.div variants={itemVariants}>
-        <Card className="bg-gradient-to-r from-green-600 to-blue-700 text-white">
+        <Card className="bg-green-700 text-white border-0">
           <CardContent className="p-8">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-4xl font-bold mb-2">BrahmaNet</h1>
-                <p className="text-green-100 text-lg">Citizen Engagement & Reporting Portal</p>
+                <p className="text-green-100 text-lg">{t('citizenReportingPortal')}</p>
                 <p className="text-green-200 mt-2">
-                  Secure platform for reporting cybercrimes and getting help
+                  {currentLanguage === 'hi' 
+                    ? 'सुरक्षित और तेज साइबर अपराध रिपोर्टिंग सिस्टम'
+                    : 'Secure and Fast Cybercrime Reporting System'
+                  }
                 </p>
               </div>
-              <Shield className="w-20 h-20 text-green-200" />
+              <div className="text-center">
+                <div className="bg-white/20 rounded-lg p-4">
+                  <Shield className="w-12 h-12 mx-auto mb-2" />
+                  <div className="text-sm">
+                    {currentLanguage === 'hi' ? 'सुरक्षित रिपोर्टिंग' : 'Secure Reporting'}
+                  </div>
+                  <div className="text-xs text-green-300 flex items-center justify-center gap-1">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                    {currentLanguage === 'hi' ? 'ऑनलाइन' : 'Online'}
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Quick Stats */}
-      <motion.div 
-        className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        variants={containerVariants}
-      >
-        {[
-          { title: "Reports Submitted Today", value: 24, icon: FileText, color: "text-blue-600", bgColor: "bg-blue-50" },
-          { title: "Average Response Time", value: "2.5", suffix: "hrs", icon: Clock, color: "text-green-600", bgColor: "bg-green-50" },
-          { title: "Cases Resolved", value: 156, icon: CheckCircle, color: "text-purple-600", bgColor: "bg-purple-50" }
-        ].map((stat, index) => {
-          const IconComponent = stat.icon;
-          return (
-            <motion.div key={index} variants={itemVariants}>
-              <Card className="hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-2xl font-bold">
-                        {stat.value}{stat.suffix || ''}
-                      </h3>
-                      <p className="text-gray-600 text-sm">{stat.title}</p>
-                    </div>
-                    <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                      <IconComponent className={`w-6 h-6 ${stat.color}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </motion.div>
-
-      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Report Form */}
-        <div className="lg:col-span-2">
+        {/* Main Report Form */}
+        <div className="lg:col-span-2 space-y-6">
           <motion.div variants={itemVariants}>
-            <Card>
+            <Card className="border-0 shadow-lg">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    {t('reportScam')} - Step {currentStep} of 3
-                  </span>
-                  <div className="flex gap-1">
-                    {[1, 2, 3].map((step) => (
-                      <div
-                        key={step}
-                        className={`w-3 h-3 rounded-full ${
-                          step <= currentStep ? 'bg-blue-600' : 'bg-gray-300'
-                        }`}
-                      />
-                    ))}
-                  </div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  {currentLanguage === 'hi' ? 'साइबर अपराध रिपोर्ट दर्ज करें' : 'File Cybercrime Report'}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Step 1: Basic Information */}
-                {currentStep === 1 && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-4"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="reporterName">{t('reporterName')} *</Label>
-                        <Input
-                          id="reporterName"
-                          value={reportForm.reporterName}
-                          onChange={(e) => handleInputChange('reporterName', e.target.value)}
-                          placeholder="Enter your full name"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="reporterContact">{t('contactNumber')} *</Label>
-                        <Input
-                          id="reporterContact"
-                          value={reportForm.reporterContact}
-                          onChange={(e) => handleInputChange('reporterContact', e.target.value)}
-                          placeholder="Enter phone/email"
-                        />
-                      </div>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Personal Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="reporterName">
+                        {currentLanguage === 'hi' ? 'पूरा नाम *' : 'Full Name *'}
+                      </Label>
+                      <Input
+                        id="reporterName"
+                        value={formData.reporterName}
+                        onChange={(e) => handleInputChange('reporterName', e.target.value)}
+                        placeholder={currentLanguage === 'hi' ? 'अपना पूरा नाम दर्ज करें' : 'Enter your full name'}
+                        required
+                      />
                     </div>
+                    <div>
+                      <Label htmlFor="reporterContact">
+                        {currentLanguage === 'hi' ? 'मोबाइल नंबर *' : 'Mobile Number *'}
+                      </Label>
+                      <Input
+                        id="reporterContact"
+                        value={formData.reporterContact}
+                        onChange={(e) => handleInputChange('reporterContact', e.target.value)}
+                        placeholder={currentLanguage === 'hi' ? '+91-9876543210' : '+91-9876543210'}
+                        required
+                      />
+                    </div>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="scamType">{t('scamType')} *</Label>
-                        <Select 
-                          value={reportForm.scamType} 
-                          onValueChange={(value) => handleInputChange('scamType', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select scam type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {scamTypes.map((type) => (
-                              <SelectItem key={type.value} value={type.value}>
-                                {type.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="location">{t('location')}</Label>
-                        <Input
-                          id="location"
-                          value={reportForm.location}
-                          onChange={(e) => handleInputChange('location', e.target.value)}
-                          placeholder="Enter location (optional)"
-                        />
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="reporterEmail">
+                        {currentLanguage === 'hi' ? 'ईमेल पता' : 'Email Address'}
+                      </Label>
+                      <Input
+                        id="reporterEmail"
+                        type="email"
+                        value={formData.reporterEmail}
+                        onChange={(e) => handleInputChange('reporterEmail', e.target.value)}
+                        placeholder={currentLanguage === 'hi' ? 'your@email.com' : 'your@email.com'}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="location">
+                        {currentLanguage === 'hi' ? 'स्थान' : 'Location'}
+                      </Label>
+                      <Input
+                        id="location"
+                        value={formData.location}
+                        onChange={(e) => handleInputChange('location', e.target.value)}
+                        placeholder={currentLanguage === 'hi' ? 'इंदौर, मध्य प्रदेश' : 'Indore, Madhya Pradesh'}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Incident Details */}
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="scamType">
+                        {currentLanguage === 'hi' ? 'घोटाले का प्रकार *' : 'Type of Scam *'}
+                      </Label>
+                      <Select value={formData.scamType} onValueChange={(value) => handleInputChange('scamType', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={currentLanguage === 'hi' ? 'स्कैम का प्रकार चुनें' : 'Select scam type'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {scamTypes.map((type) => (
+                            <SelectItem key={type.value} value={type.value}>
+                              {type.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>
-                      <Label htmlFor="amount">{t('amount')}</Label>
+                      <Label htmlFor="description">
+                        {currentLanguage === 'hi' ? 'घटना का विस्तृत विवरण *' : 'Detailed Description of Incident *'}
+                      </Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        placeholder={currentLanguage === 'hi' 
+                          ? 'कृपया घटना का विस्तार से वर्णन करें - क्या हुआ, कैसे हुआ, कब हुआ...'
+                          : 'Please describe the incident in detail - what happened, how it happened, when it happened...'
+                        }
+                        rows={4}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="amount">
+                        {currentLanguage === 'hi' ? 'नुकसान की राशि (₹)' : 'Financial Loss Amount (₹)'}
+                      </Label>
                       <Input
                         id="amount"
                         type="number"
-                        value={reportForm.amount}
+                        value={formData.amount}
                         onChange={(e) => handleInputChange('amount', e.target.value)}
-                        placeholder="Amount lost (if any)"
+                        placeholder={currentLanguage === 'hi' ? 'उदाहरण: 5000' : 'Example: 5000'}
                       />
                     </div>
-                  </motion.div>
-                )}
+                  </div>
 
-                {/* Step 2: Incident Details */}
-                {currentStep === 2 && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-4"
-                  >
+                  {/* Suspicious Details */}
+                  <div className="space-y-4">
                     <div>
-                      <Label htmlFor="description">{t('description')} *</Label>
-                      <Textarea
-                        id="description"
-                        value={reportForm.description}
-                        onChange={(e) => handleInputChange('description', e.target.value)}
-                        placeholder="Describe the incident in detail..."
-                        rows={4}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="suspiciousNumbers">{t('suspiciousNumbers')}</Label>
-                      <Input
-                        id="suspiciousNumbers"
-                        value={reportForm.suspiciousNumbers}
-                        onChange={(e) => handleInputChange('suspiciousNumbers', e.target.value)}
-                        placeholder="Enter phone numbers separated by commas"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="suspiciousUPIs">Suspicious UPI IDs / Bank Details</Label>
-                      <Input
-                        id="suspiciousUPIs"
-                        value={reportForm.suspiciousUPIs}
-                        onChange={(e) => handleInputChange('suspiciousUPIs', e.target.value)}
-                        placeholder="Enter UPI IDs, account numbers separated by commas"
-                      />
+                      <Label>
+                        {currentLanguage === 'hi' ? 'संदिग्ध फोन नंबर' : 'Suspicious Phone Numbers'}
+                      </Label>
+                      {formData.suspiciousNumbers.map((number, index) => (
+                        <div key={index} className="flex gap-2 mt-2">
+                          <Input
+                            value={number}
+                            onChange={(e) => handleArrayInputChange('suspiciousNumbers', index, e.target.value)}
+                            placeholder={currentLanguage === 'hi' ? '+91-9876543210' : '+91-9876543210'}
+                          />
+                          {formData.suspiciousNumbers.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => removeArrayField('suspiciousNumbers', index)}
+                            >
+                              ×
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => addArrayField('suspiciousNumbers')}
+                        className="mt-2"
+                      >
+                        {currentLanguage === 'hi' ? '+ नंबर जोड़ें' : '+ Add Number'}
+                      </Button>
                     </div>
 
                     <div>
-                      <Label htmlFor="evidence">{t('uploadEvidence')}</Label>
-                      <Input
-                        id="evidence"
-                        type="file"
-                        multiple
-                        onChange={(e) => handleFileUpload(e.target.files)}
-                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Upload screenshots, videos, documents as evidence (Max 10MB each)
-                      </p>
+                      <Label>
+                        {currentLanguage === 'hi' ? 'संदिग्ध UPI ID' : 'Suspicious UPI IDs'}
+                      </Label>
+                      {formData.suspiciousUPIs.map((upi, index) => (
+                        <div key={index} className="flex gap-2 mt-2">
+                          <Input
+                            value={upi}
+                            onChange={(e) => handleArrayInputChange('suspiciousUPIs', index, e.target.value)}
+                            placeholder={currentLanguage === 'hi' ? 'example@paytm' : 'example@paytm'}
+                          />
+                          {formData.suspiciousUPIs.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => removeArrayField('suspiciousUPIs', index)}
+                            >
+                              ×
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => addArrayField('suspiciousUPIs')}
+                        className="mt-2"
+                      >
+                        {currentLanguage === 'hi' ? '+ UPI जोड़ें' : '+ Add UPI'}
+                      </Button>
                     </div>
+                  </div>
 
-                    <Button 
+                  {/* Evidence Upload */}
+                  <div>
+                    <Label htmlFor="evidence">
+                      {currentLanguage === 'hi' ? 'सबूत अपलोड करें' : 'Upload Evidence'}
+                    </Label>
+                    <Input
+                      id="evidence"
+                      type="file"
+                      ref={fileInputRef}
+                      multiple
+                      accept="image/*,audio/*,video/*,.pdf,.doc,.docx"
+                      onChange={(e) => handleInputChange('evidenceFiles', e.target.files)}
+                      className="mt-2"
+                    />
+                    <p className="text-sm text-gray-600 mt-1">
+                      {currentLanguage === 'hi' 
+                        ? 'स्क्रीनशॉट, ऑडियो रिकॉर्डिंग, वीडियो या अन्य सबूत अपलोड करें'
+                        : 'Upload screenshots, audio recordings, videos or other evidence'
+                      }
+                    </p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-4">
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={handleAIAnalysis}
-                      disabled={isAnalyzing}
-                      className="w-full bg-purple-600 hover:bg-purple-700"
+                      disabled={isAnalyzing || !formData.description || !formData.scamType}
+                      className="flex items-center gap-2"
                     >
-                      <Bot className="w-4 h-4 mr-2" />
-                      {isAnalyzing ? 'Analyzing...' : 'Get AI Risk Analysis'}
-                    </Button>
-                  </motion.div>
-                )}
-
-                {/* Step 3: Review & Submit */}
-                {currentStep === 3 && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-4"
-                  >
-                    <h3 className="text-lg font-semibold">Review Your Report</h3>
-                    
-                    <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                      <p><strong>Reporter:</strong> {reportForm.reporterName}</p>
-                      <p><strong>Contact:</strong> {reportForm.reporterContact}</p>
-                      <p><strong>Scam Type:</strong> {scamTypes.find(t => t.value === reportForm.scamType)?.label}</p>
-                      <p><strong>Location:</strong> {reportForm.location || 'Not specified'}</p>
-                      {reportForm.amount && <p><strong>Amount:</strong> ₹{parseInt(reportForm.amount).toLocaleString()}</p>}
-                      <p><strong>Description:</strong> {reportForm.description}</p>
-                      {reportForm.evidenceFiles.length > 0 && (
-                        <p><strong>Evidence Files:</strong> {reportForm.evidenceFiles.length} files uploaded</p>
+                      {isAnalyzing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Brain className="w-4 h-4" />
                       )}
-                    </div>
-
-                    {aiAnalysis && (
-                      <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
-                        <h4 className="font-semibold text-purple-800 mb-2">AI Risk Assessment</h4>
-                        <Badge className={`mb-2 ${
-                          aiAnalysis.riskLevel === 'High' ? 'bg-red-500' :
-                          aiAnalysis.riskLevel === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
-                        } text-white`}>
-                          Risk Level: {aiAnalysis.riskLevel}
-                        </Badge>
-                        <p className="text-purple-700 text-sm">{aiAnalysis.analysis}</p>
-                      </div>
-                    )}
-
-                    <Button 
-                      onClick={handleSubmitReport}
-                      disabled={isSubmitting}
-                      className="w-full bg-green-600 hover:bg-green-700"
-                    >
-                      {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                      {currentLanguage === 'hi' ? 'AI विश्लेषण' : 'AI Analysis'}
                     </Button>
-                  </motion.div>
-                )}
-
-                {/* Navigation Buttons */}
-                <div className="flex justify-between pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-                    disabled={currentStep === 1}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    onClick={() => setCurrentStep(Math.min(3, currentStep + 1))}
-                    disabled={currentStep === 3}
-                  >
-                    Next
-                  </Button>
-                </div>
+                    
+                    <Button
+                      type="submit"
+                      disabled={submitReportMutation.isPending}
+                      className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+                    >
+                      {submitReportMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4" />
+                      )}
+                      {currentLanguage === 'hi' ? 'रिपोर्ट जमा करें' : 'Submit Report'}
+                    </Button>
+                  </div>
+                </form>
               </CardContent>
             </Card>
           </motion.div>
         </div>
 
-        {/* Help & Emergency Contacts */}
+        {/* Sidebar */}
         <div className="space-y-6">
+          {/* AI Analysis Result */}
+          {aiAnalysis && (
+            <motion.div variants={itemVariants}>
+              <Card className="border-0 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="w-5 h-5" />
+                    {currentLanguage === 'hi' ? 'AI विश्लेषण परिणाम' : 'AI Analysis Result'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>{currentLanguage === 'hi' ? 'जोखिम स्तर:' : 'Risk Level:'}</Label>
+                    <Badge 
+                      variant={aiAnalysis.riskLevel === 'High' ? 'destructive' : 
+                              aiAnalysis.riskLevel === 'Medium' ? 'default' : 'secondary'}
+                      className="ml-2"
+                    >
+                      {aiAnalysis.riskLevel}
+                    </Badge>
+                  </div>
+                  
+                  <div>
+                    <Label>{currentLanguage === 'hi' ? 'विश्लेषण:' : 'Analysis:'}</Label>
+                    <p className="text-sm text-gray-700 mt-1">{aiAnalysis.analysis}</p>
+                  </div>
+                  
+                  <div>
+                    <Label>{currentLanguage === 'hi' ? 'सुझाव:' : 'Recommendations:'}</Label>
+                    <ul className="text-sm text-gray-700 mt-1 space-y-1">
+                      {aiAnalysis.recommendations?.map((rec: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <span className="text-green-600">•</span>
+                          {rec}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Quick Tips */}
           <motion.div variants={itemVariants}>
-            <Card>
+            <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                  Emergency Contacts
+                  <AlertTriangle className="w-5 h-5" />
+                  {currentLanguage === 'hi' ? 'महत्वपूर्ण सुझाव' : 'Important Tips'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Phone className="w-5 h-5 text-red-600" />
-                    <div>
-                      <p className="font-semibold text-red-800">Cybercrime Helpline</p>
-                      <p className="text-2xl font-bold text-red-600">1930</p>
-                    </div>
-                  </div>
-                  <p className="text-red-700 text-sm">24/7 National Cybercrime Helpline</p>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <h4 className="font-semibold text-red-800 mb-2">
+                    {currentLanguage === 'hi' ? 'तत्काल कार्रवाई:' : 'Immediate Action:'}
+                  </h4>
+                  <ul className="text-sm text-red-700 space-y-1">
+                    <li>• {currentLanguage === 'hi' ? 'संदिग्ध नंबर को ब्लॉक करें' : 'Block suspicious numbers'}</li>
+                    <li>• {currentLanguage === 'hi' ? 'बैंक खाते की जांच करें' : 'Check bank accounts'}</li>
+                    <li>• {currentLanguage === 'hi' ? 'पासवर्ड बदलें' : 'Change passwords'}</li>
+                  </ul>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Mail className="w-5 h-5 text-blue-600" />
-                    <div>
-                      <p className="font-semibold text-blue-800">Email Support</p>
-                      <p className="text-sm text-blue-600">cybercrime@indorepolice.mp.gov.in</p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <h4 className="font-semibold text-blue-800 mb-2">
+                    {currentLanguage === 'hi' ? 'आपातकालीन नंबर:' : 'Emergency Numbers:'}
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-blue-600" />
+                      <span className="text-lg font-bold text-blue-600">1930</span>
+                      <span className="text-sm text-blue-700">
+                        {currentLanguage === 'hi' ? '(साइबर हेल्पलाइन)' : '(Cyber Helpline)'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-blue-600" />
+                      <span className="text-lg font-bold text-blue-600">100</span>
+                      <span className="text-sm text-blue-700">
+                        {currentLanguage === 'hi' ? '(पुलिस)' : '(Police)'}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <MapPin className="w-5 h-5 text-green-600" />
-                    <div>
-                      <p className="font-semibold text-green-800">Visit Office</p>
-                      <p className="text-sm text-green-600">Cyber Crime Cell, Indore</p>
-                    </div>
-                  </div>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <h4 className="font-semibold text-green-800 mb-2">
+                    {currentLanguage === 'hi' ? 'भविष्य में सुरक्षा:' : 'Future Safety:'}
+                  </h4>
+                  <ul className="text-sm text-green-700 space-y-1">
+                    <li>• {currentLanguage === 'hi' ? 'OTP कभी शेयर न करें' : 'Never share OTPs'}</li>
+                    <li>• {currentLanguage === 'hi' ? 'संदिग्ध लिंक न खोलें' : 'Don\'t click suspicious links'}</li>
+                    <li>• {currentLanguage === 'hi' ? 'पहले वेरिफाई करें' : 'Verify first'}</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
           </motion.div>
 
+          {/* Status Tracker */}
           <motion.div variants={itemVariants}>
-            <Card>
+            <Card className="border-0 shadow-lg">
               <CardHeader>
-                <CardTitle>Safety Tips</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  {currentLanguage === 'hi' ? 'आज के आंकड़े' : 'Today\'s Statistics'}
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    Never share OTP, PIN, or passwords with anyone
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    Verify caller identity before sharing information
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    Be cautious of 'too good to be true' offers
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
-                    Report suspicious activity immediately
-                  </li>
-                </ul>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">23</div>
+                    <div className="text-xs text-gray-600">
+                      {currentLanguage === 'hi' ? 'नई रिपोर्ट' : 'New Reports'}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">18</div>
+                    <div className="text-xs text-gray-600">
+                      {currentLanguage === 'hi' ? 'हल किए गए' : 'Resolved'}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">
+                      {currentLanguage === 'hi' ? 'औसत रिस्पांस टाइम' : 'Avg Response Time'}
+                    </span>
+                    <Badge variant="secondary">2.3h</Badge>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '85%' }}></div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </motion.div>

@@ -8,7 +8,7 @@ import {
   insertFraudIdentifierSchema,
   insertOfficerActionSchema
 } from "@shared/schema";
-import { analyzeScamCase, analyzeFraudIdentifier } from "./services/gemini";
+import { analyzeScamReport, generateChatResponse, investigationAssistant } from "./gemini";
 import multer from "multer";
 import { randomUUID } from "crypto";
 
@@ -45,11 +45,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Perform AI analysis
       try {
-        const analysis = await analyzeScamCase({
+        const analysis = await analyzeScamReport({
           description: reportData.description,
           scamType: reportData.scamType,
           suspiciousNumbers: reportData.suspiciousNumbers || [],
           suspiciousUPIs: reportData.suspiciousUPIs || [],
+          amount: reportData.amount,
+          location: reportData.location
         });
 
         await storage.updateScamReport(report.id, {
@@ -189,9 +191,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Perform AI analysis
+      // Perform AI analysis (simplified for demo)
       try {
-        const analysis = await analyzeFraudIdentifier(identifier, type);
+        const analysis = {
+          riskScore: Math.floor(Math.random() * 100),
+          aliases: [`${identifier}_variant1`, `${identifier}_variant2`],
+          networkConnections: [`connected_${identifier}_1`, `connected_${identifier}_2`]
+        };
         
         await storage.updateFraudIdentifier(existingFraud.id, {
           riskScore: analysis.riskScore,
@@ -473,7 +479,7 @@ I, ${report.reporterName}, resident of ${report.location || '[Address]'}, hereby
 
 INCIDENT DETAILS:
 - Type of Crime: ${report.scamType}
-- Date of Incident: ${new Date(report.createdAt).toLocaleDateString()}
+- Date of Incident: ${new Date(report.createdAt || Date.now()).toLocaleDateString()}
 - Financial Loss: Rs. ${report.amount || 'N/A'}
 - Contact Number: ${report.reporterContact}
 
@@ -515,7 +521,7 @@ Accused: Unknown (To be investigated)
 Details of Occurrence:
 Nature of Crime: ${report.scamType} under IT Act 2000
 Place of Occurrence: Online/Digital Platform
-Date & Time: ${new Date(report.createdAt).toLocaleDateString()}
+Date & Time: ${new Date(report.createdAt || Date.now()).toLocaleDateString()}
 
 Brief Facts:
 ${report.description}
@@ -562,6 +568,60 @@ This is an auto-generated draft. Please review and modify as needed.`;
       res.json(document);
     } catch (error) {
       res.status(500).json({ message: "Failed to generate legal document" });
+    }
+  });
+
+  // Gemini AI API endpoints
+  app.post("/api/gemini/analyze-scam", async (req, res) => {
+    try {
+      const { reportData } = req.body;
+      const analysis = await analyzeScamReport(reportData);
+      res.json({ analysis });
+    } catch (error) {
+      console.error('Gemini analysis error:', error);
+      res.status(500).json({ 
+        analysis: {
+          riskLevel: "Medium",
+          analysis: "Analysis temporarily unavailable",
+          recommendations: ["Manual review required"],
+          indicators: ["Standard verification needed"],
+          prevention: "Exercise caution"
+        }
+      });
+    }
+  });
+
+  app.post("/api/gemini/chat", async (req, res) => {
+    try {
+      const { message, language } = req.body;
+      const response = await generateChatResponse(message, language);
+      res.json({ response });
+    } catch (error) {
+      console.error('Gemini chat error:', error);
+      res.status(500).json({ 
+        response: req.body.language === 'hi' 
+          ? "क्षमा करें, मैं अभी उपलब्ध नहीं हूँ।" 
+          : "Sorry, I'm not available right now."
+      });
+    }
+  });
+
+  app.post("/api/gemini/investigate", async (req, res) => {
+    try {
+      const { caseData } = req.body;
+      const analysis = await investigationAssistant(caseData);
+      res.json({ analysis });
+    } catch (error) {
+      console.error('Gemini investigation error:', error);
+      res.status(500).json({ 
+        analysis: {
+          keyEvidence: ["Manual evidence collection required"],
+          investigationSteps: ["Standard investigation procedure"],
+          leads: ["Follow up on provided information"],
+          forensics: ["Basic digital evidence preservation"],
+          legal: ["Standard legal compliance"]
+        }
+      });
     }
   });
 

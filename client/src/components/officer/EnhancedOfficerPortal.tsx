@@ -186,7 +186,7 @@ export function EnhancedOfficerPortal() {
       transition={{ duration: 0.6 }}
     >
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white rounded-lg p-6">
+      <div className="bg-blue-800 text-white rounded-lg p-6 border-0">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">PRAHAAR ZONE - Officer Portal</h1>

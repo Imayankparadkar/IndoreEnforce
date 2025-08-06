@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Mic, Headphones, AlertCircle, Users, Waveform } from "lucide-react";
+import { Mic, Headphones, AlertCircle, Users, Radio } from "lucide-react";
 
 interface VoiceprintMatch {
   id: string;
@@ -144,7 +144,7 @@ export default function VoiceprintAnalyzer() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Waveform className="text-purple-600 mr-2" />
+            <Radio className="text-purple-600 mr-2" />
             Voiceprint Profiling System
           </CardTitle>
           <p className="text-sm text-gray-600">

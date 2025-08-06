@@ -1,0 +1,236 @@
+🔰 Project Title:
+“Prahaar 360 – Unified Cyber Enforcement Suite for Indore”
+
+🛡️ Description:
+Build a complete AI-powered cybercrime reporting and prevention website named “Prahaar 360”, specially designed for Indore, Madhya Pradesh. This platform helps citizens, police officers, and cybersecurity teams to report, track, analyze, and prevent various types of online frauds like voice scams, UPI fraud, phishing, fake calls, and impersonation.
+
+It contains 4 main intelligent modules named Vajra, Kautilya, MayaJaal, and BrahmaNet, each with specific functionality.
+
+Use only free-tier tools, APIs, faker data generation, and open-source frameworks to make this fully working without cost. Include live demo data and UI components that allow interaction.
+
+🔲 STRUCTURE OF THE WEBSITE:
+➤ 1. 🔵 Homepage (Dashboard Style)
+Title: Prahaar 360 – Indore’s Cyber Defence Suite
+
+Navbar with:
+
+Home
+
+Vajra (Real-Time Threat Map)
+
+Kautilya (AI Investigation)
+
+MayaJaal (Data Web Intelligence)
+
+BrahmaNet (Citizen Portal)
+
+Officer Login
+
+Report Fraud
+
+Show dashboard metrics:
+
+Total scams reported in Indore (last 30 days)
+
+UPI scam heatmap
+
+Active fraud numbers
+
+Real-time scam alerts
+
+Use chart.js or echarts for beautiful real-time dashboards.
+
+💠 MODULES
+🔱 2. VAJRA – Real-Time Threat Map (AI Threat Visualizer)
+Goal: Visualize scam trends in Indore in real time.
+
+Features:
+
+Heatmap of Indore with scam clusters (use fake data generated via faker.js).
+
+Filter by:
+
+Scam Type: UPI, Voice Call, Loan Scam, Job Scam
+
+Timeframe: Last 24h, 7 days, 30 days
+
+Display top scam-prone areas (e.g., Rajwada, Vijay Nagar).
+
+Real-time alerts ticker at bottom ("Alert: Voice scam reported near Palasia").
+
+Tech Suggestions:
+
+Use Leaflet.js or Mapbox (free tier)
+
+Use random data via Faker with coordinates of Indore
+
+🧠 3. KAUTILYA – AI-Based Case Investigator
+Goal: When a complaint is submitted, Kautilya auto-investigates using digital signals.
+
+User Input: UPI ID, phone number, WhatsApp screenshot, Telegram handle, voice file, etc.
+
+AI Features:
+
+Match data against previously flagged reports
+
+Auto-tag Truecaller name, WhatsApp profile photo (via dummy data)
+
+GPT Analysis:
+
+"Is this KYC scam?"
+
+"Is this UPI reversal fraud?"
+
+Links all matching fraud reports using pattern recognition
+
+Output:
+
+Timeline of reported cases
+
+AI Prediction: High, Medium, Low risk
+
+Suggested next steps
+
+🧿 4. MAYAJAAL – Scammer Web Intelligence System
+Goal: Build a digital footprint of the scammer.
+
+Modules:
+
+Fake App UI Detector: Upload screen recording → Transcribes UI → Detects fake apps
+
+Telegram Group Tracker: Scan group links (simulated) for fraud activity
+
+UPI Tracker: Show if UPI ID is part of scam network
+
+WhatsApp Number Analysis: Show alias names and scam probability
+
+Fake Data Suggestions:
+
+UPI IDs like: @paytmfraud123, @phishinglink
+
+Telegram handles: @LoanApp123, @FakeJobAlert
+
+🌐 5. BRAHMANET – Citizen Interaction Portal
+Purpose: Engage citizens in awareness and self-diagnosis.
+
+Sections:
+
+Cyber Hygiene Score
+
+Questions: “Do you download APKs?”, “Have you shared OTPs?”, etc.
+
+Shows: Score: Safe / Risky / Dangerous
+
+Report Scam Form
+
+Form fields: Name, Contact, Description, Attachments
+
+Real-time AI analysis on submission (GPT-4-like behavior)
+
+Option to track status with ticket ID
+
+Cyber Vault
+
+Upload evidence (images, chats, audio)
+
+Stored in local dummy db (not real storage)
+
+Can be flagged to LEA if risky
+
+Scam Voting System
+
+Blockchain-style verified UPI ID list
+
+Citizens can upvote/downvote suspicious IDs
+
+👮‍♂️ 6. ENFORCEMENT PANEL – PRAHAAR ZONE (OFFICER LOGIN)
+Officer-only Panel:
+
+Zero-Trust Login:
+
+Aadhaar cert login (simulated)
+
+2FA with OTP (demo only)
+
+Case Lifecycle:
+
+View assigned cases
+
+Assign to field agents
+
+Action Timeline: Reported → Under Review → Investigation → Flagged → Closed
+
+Collaboration:
+
+Templates for info request to:
+
+WhatsApp
+
+RBI
+
+Telecom
+
+Inter-agency tagging
+
+Immutable Logs:
+
+Use simple blockchain logic to track case edits
+
+Every action (by user or officer) is logged and shown in “Immutable Chain”
+
+⚙️ TECH REQUIREMENTS (ALL FREE TIER)
+Hosting: GitHub Pages / Netlify
+
+Frontend: HTML, Tailwind CSS, JS (React optional)
+
+Maps: Leaflet.js (Free)
+
+AI: Gemini API, OpenAI (if available), Whisper.js (for voice), Faker.js (for data)
+
+Backend (Optional): Firebase / Node.js Express / Supabase (Free tiers)
+
+Database: IndexedDB or Local JSON for demo
+
+🔍 EXAMPLE SCAM CASE (FAKE DATA FOR DEMO)
+Complaint Filed:
+
+UPI: @paytmpay987
+
+Phone: +91 9876543210
+
+WhatsApp: “Your KYC is expiring”
+
+Telegram: @SBIupdatehelp
+
+Kautilya Analysis:
+
+Matches 3 older scams
+
+Connected with group “Fake KYC Updates”
+
+Risk Level: High
+
+Officer Assigned: Inspector Sharma
+
+🔰 ADDITIONAL IDEAS
+Chatbot using GPT (only simulate, don’t connect backend)
+
+Awareness quiz section for students
+
+Voice Alert System (if browser mic allows)
+
+🏁 FINAL OUTPUT REQUIREMENTS
+Website should be fully working (demo data + interactive components)
+
+No login or data storage required for public demo
+
+All sections show visual interactivity (heatmaps, analysis, tables)
+
+Should be impressive for a Hackathon Demo
+
+
+built this website and give me code for it make it fully working website and make it as it was govt website full working in all feature and also add more feature as you like this is good to add  using react, javascript, node backend , gemini free tier  api key and many things as you want to use in it to make it webiste fully working but use all things which is free of cost not paid 
+
+give me full codes ,commands to make this files to codes like forntend and backend 
+and add full features in it 
+make it like cybercrime security governemtn webisite 

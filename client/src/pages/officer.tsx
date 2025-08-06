@@ -44,12 +44,12 @@ export default function Officer() {
 
   const { data: assignedCases } = useQuery({
     queryKey: ["/api/case-investigations"],
-    enabled: isLoggedIn && currentOfficer?.id,
+    enabled: !!isLoggedIn && !!currentOfficer?.id,
   });
 
   const { data: officerActions } = useQuery({
     queryKey: ["/api/officer-actions"],
-    enabled: isLoggedIn && currentOfficer?.id,
+    enabled: !!isLoggedIn && !!currentOfficer?.id,
   });
 
   const handleLogin = (e: React.FormEvent) => {

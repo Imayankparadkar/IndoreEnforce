@@ -1,12 +1,16 @@
+import { Suspense, useEffect, useState } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "./contexts/AuthContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import Header from "@/components/layout/header";
 import Navigation from "@/components/layout/navigation";
 import AlertTicker from "@/components/layout/alert-ticker";
-import MultilingualChatbot from "@/components/chatbot/multilingual-chatbot";
+import { Footer } from "@/components/layout/Footer";
+import { EnhancedChatbot } from "@/components/chatbot/enhanced-chatbot";
 import Dashboard from "@/pages/dashboard";
 import Vajra from "@/pages/vajra";
 import Kautilya from "@/pages/kautilya";
@@ -14,9 +18,13 @@ import MayaJaal from "@/pages/mayajaal";
 import BrahmaNet from "@/pages/brahmanet";
 import Officer from "@/pages/officer";
 import NotFound from "@/pages/not-found";
-import { useState } from "react";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+// @ts-ignore
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+import './lib/i18n';
 
 function Router() {
   return (
@@ -32,40 +40,76 @@ function Router() {
   );
 }
 
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+      <div className="text-center">
+        <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+        <p className="text-gray-600">Loading Prahaar 360...</p>
+      </div>
+    </div>
+  );
+}
+
 function App() {
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      once: true,
+      easing: 'ease-out-cubic',
+    });
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen bg-gray-50 security-pattern">
-          <Header />
-          <Navigation />
-          <AlertTicker />
-          <main className="container mx-auto px-4 py-8">
-            <Router />
-          </main>
-          
-          {/* Floating Chatbot Button */}
-          {!isChatbotOpen && (
-            <Button
-              onClick={() => setIsChatbotOpen(true)}
-              className="fixed bottom-4 right-4 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg z-40"
-            >
-              <MessageCircle className="h-6 w-6 text-white" />
-            </Button>
-          )}
-          
-          {/* Multilingual Chatbot */}
-          <MultilingualChatbot 
-            isOpen={isChatbotOpen} 
-            onClose={() => setIsChatbotOpen(false)} 
-          />
-          
-          <Toaster />
-        </div>
-      </TooltipProvider>
+      <AuthProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <Suspense fallback={<LoadingSpinner />}>
+              <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+                <Header />
+                <Navigation />
+                <AlertTicker />
+                <main className="container mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
+                  <Router />
+                </main>
+                <Footer />
+                
+                {/* Floating Chatbot Button */}
+                {!isChatbotOpen && (
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ 
+                      type: "spring", 
+                      stiffness: 260, 
+                      damping: 20,
+                      delay: 1 
+                    }}
+                  >
+                    <Button
+                      onClick={() => setIsChatbotOpen(true)}
+                      className="fixed bottom-4 right-4 w-16 h-16 rounded-full bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 shadow-xl z-40 border-4 border-white hover:scale-110 transition-all duration-300"
+                    >
+                      <MessageCircle className="h-7 w-7 text-white" />
+                    </Button>
+                  </motion.div>
+                )}
+                
+                {/* Enhanced Chatbot */}
+                <EnhancedChatbot 
+                  isOpen={isChatbotOpen} 
+                  onClose={() => setIsChatbotOpen(false)} 
+                />
+                
+                <Toaster />
+              </div>
+            </Suspense>
+          </TooltipProvider>
+        </LanguageProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  
+  /* Government website specific colors */
+  --gov-blue-50: hsl(214, 100%, 97%);
+  --gov-blue-500: hsl(207, 90%, 54%);
+  --gov-blue-600: hsl(207, 90%, 48%);
+  --gov-blue-700: hsl(207, 90%, 42%);
+  --gov-blue-800: hsl(207, 90%, 36%);
+  --gov-blue-900: hsl(207, 90%, 30%);
+  
+  --gov-orange-500: hsl(20, 92%, 50%);
+  --gov-orange-600: hsl(20, 92%, 44%);
+  
+  --alert-red-500: hsl(0, 84%, 60%);
+  --alert-red-600: hsl(0, 84%, 54%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  /* Government website specific styles */
+  .gov-gradient {
+    background: linear-gradient(135deg, hsl(207, 90%, 36%) 0%, hsl(207, 90%, 54%) 100%);
+  }
+  
+  .security-pattern {
+    background-image: radial-gradient(circle at 1px 1px, hsla(207, 90%, 54%, 0.1) 1px, transparent 0);
+    background-size: 20px 20px;
+  }
+  
+  .glow-effect {
+    box-shadow: 0 0 20px hsla(207, 90%, 54%, 0.3);
+  }
+  
+  .alert-ticker {
+    animation: scroll 30s linear infinite;
+  }
+  
+  @keyframes scroll {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+  
+  /* Map container styling */
+  .leaflet-container {
+    height: 100%;
+    width: 100%;
+    border-radius: 0.5rem;
+  }
+  
+  /* Custom scrollbar for better UX */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(60, 4.8%, 95.9%);
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(207, 90%, 54%);
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(207, 90%, 42%);
+  }
+  
+  /* Loading animation for charts */
+  .chart-loading {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  
+  /* Badge variants for government styling */
+  .badge-government {
+    background-color: hsl(207, 90%, 54%);
+    color: hsl(211, 100%, 99%);
+  }
+  
+  .badge-alert {
+    background-color: hsl(0, 84%, 60%);
+    color: hsl(60, 9.1%, 97.8%);
+  }
+  
+  .badge-warning {
+    background-color: hsl(45, 93%, 47%);
+    color: hsl(26, 83%, 14%);
+  }
+  
+  .badge-success {
+    background-color: hsl(142, 76%, 36%);
+    color: hsl(355, 25%, 95%);
+  }
+  
+  /* Form focus states with government colors */
+  .form-input:focus {
+    border-color: hsl(207, 90%, 54%);
+    box-shadow: 0 0 0 2px hsla(207, 90%, 54%, 0.2);
+  }
+  
+  /* Officer panel specific styling */
+  .officer-panel {
+    background: linear-gradient(145deg, hsl(207, 90%, 36%), hsl(207, 90%, 42%));
+  }
+  
+  /* Immutable chain styling */
+  .blockchain-item {
+    position: relative;
+  }
+  
+  .blockchain-item::before {
+    content: '';
+    position: absolute;
+    left: 16px;
+    top: 32px;
+    bottom: -16px;
+    width: 2px;
+    background: hsl(207, 90%, 54%);
+  }
+  
+  .blockchain-item:last-child::before {
+    display: none;
+  }
+  
+  /* Risk level indicators */
+  .risk-high {
+    background-color: hsl(0, 84%, 96%);
+    border-color: hsl(0, 84%, 60%);
+    color: hsl(0, 84%, 15%);
+  }
+  
+  .risk-medium {
+    background-color: hsl(45, 93%, 94%);
+    border-color: hsl(45, 93%, 47%);
+    color: hsl(26, 83%, 14%);
+  }
+  
+  .risk-low {
+    background-color: hsl(142, 76%, 94%);
+    border-color: hsl(142, 76%, 36%);
+    color: hsl(142, 76%, 10%);
+  }
+  
+  /* Mobile responsiveness improvements */
+  @media (max-width: 768px) {
+    .alert-ticker {
+      animation-duration: 20s;
+    }
+    
+    .mobile-nav {
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    
+    .mobile-nav::-webkit-scrollbar {
+      display: none;
+    }
+  }
+  
+  /* Print styles for reports */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    
+    .print-break {
+      page-break-before: always;
+    }
+    
+    body {
+      background: white !important;
+      color: black !important;
+    }
+  }
+  
+  /* Accessibility improvements */
+  .focus-visible:focus {
+    outline: 2px solid hsl(207, 90%, 54%);
+    outline-offset: 2px;
+  }
+  
+  .screen-reader-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    :root {
+      --border: hsl(0, 0%, 0%);
+      --primary: hsl(207, 90%, 40%);
+    }
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .alert-ticker {
+      animation: none;
+    }
+    
+    .chart-loading {
+      animation: none;
+    }
+    
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

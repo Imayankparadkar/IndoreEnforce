@@ -76,6 +76,48 @@ export const officerActions = pgTable("officer_actions", {
   immutableHash: text("immutable_hash").notNull(),
 });
 
+// New tables for 6-step workflow
+export const kautilyaOperations = pgTable("kautilya_operations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reportId: text("report_id").notNull(),
+  officerId: text("officer_id").notNull(),
+  status: text("status").notNull().default("initiated"), // initiated, engaging, extracting, analyzing, authorized, completed
+  targetNumber: text("target_number"),
+  extractedUPI: text("extracted_upi"),
+  chatLog: jsonb("chat_log").$type<Array<{role: string, message: string, timestamp: string}>>().default([]),
+  scammerDNA: jsonb("scammer_dna").$type<Record<string, any>>(),
+  networkMatches: jsonb("network_matches").$type<string[]>().default([]),
+  vajraAuthorized: boolean("vajra_authorized").default(false),
+  vajraExecuted: boolean("vajra_executed").default(false),
+  akhantaLedger: jsonb("akhanta_ledger").$type<Array<{action: string, timestamp: string, hash: string}>>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const mayajaalProfiles = pgTable("mayajaal_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  profileName: text("profile_name").notNull(),
+  persona: text("persona").notNull(),
+  backstory: text("backstory").notNull(),
+  communicationStyle: text("communication_style").notNull(),
+  isActive: boolean("is_active").default(true),
+  usageCount: integer("usage_count").default(0),
+  successRate: integer("success_rate").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const vajraActions = pgTable("vajra_actions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  operationId: text("operation_id").notNull(),
+  actionType: text("action_type").notNull(), // freeze_upi, block_number, alert_banks
+  targetIdentifier: text("target_identifier").notNull(),
+  status: text("status").notNull().default("pending"), // pending, executed, failed
+  authorizedBy: text("authorized_by").notNull(),
+  authorizationHash: text("authorization_hash").notNull(),
+  executedAt: timestamp("executed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -114,6 +156,23 @@ export const insertOfficerActionSchema = createInsertSchema(officerActions).omit
   timestamp: true,
 });
 
+export const insertKautilyaOperationSchema = createInsertSchema(kautilyaOperations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMayajaalProfileSchema = createInsertSchema(mayajaalProfiles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertVajraActionSchema = createInsertSchema(vajraActions).omit({
+  id: true,
+  createdAt: true,
+  executedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -127,3 +186,9 @@ export type FraudIdentifier = typeof fraudIdentifiers.$inferSelect;
 export type InsertFraudIdentifier = z.infer<typeof insertFraudIdentifierSchema>;
 export type OfficerAction = typeof officerActions.$inferSelect;
 export type InsertOfficerAction = z.infer<typeof insertOfficerActionSchema>;
+export type KautilyaOperation = typeof kautilyaOperations.$inferSelect;
+export type InsertKautilyaOperation = z.infer<typeof insertKautilyaOperationSchema>;
+export type MayajaalProfile = typeof mayajaalProfiles.$inferSelect;
+export type InsertMayajaalProfile = z.infer<typeof insertMayajaalProfileSchema>;
+export type VajraAction = typeof vajraActions.$inferSelect;
+export type InsertVajraAction = z.infer<typeof insertVajraActionSchema>;

@@ -6,7 +6,9 @@ import {
   insertCaseInvestigationSchema,
   insertThreatDataSchema,
   insertFraudIdentifierSchema,
-  insertOfficerActionSchema
+  insertOfficerActionSchema,
+  insertKautilyaOperationSchema,
+  insertVajraActionSchema
 } from "@shared/schema";
 import { analyzeScamReport, generateChatResponse, investigationAssistant } from "./gemini";
 import multer from "multer";
@@ -242,6 +244,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(action);
     } catch (error) {
       res.status(400).json({ message: "Invalid action data" });
+    }
+  });
+
+  // Gemini AI API endpoints
+  app.post("/api/gemini/analyze-scam", async (req, res) => {
+    try {
+      const { reportData } = req.body;
+      const analysis = await analyzeScamReport(reportData);
+      res.json({ analysis });
+    } catch (error) {
+      console.error("Gemini analysis error:", error);
+      res.status(500).json({ 
+        error: "AI analysis failed",
+        fallback: {
+          riskLevel: "Medium",
+          analysis: "Unable to process with AI at the moment. Please review manually.",
+          recommendations: ["Manual review required", "Contact cybercrime cell"],
+          indicators: ["Suspicious communication patterns"],
+          prevention: "Exercise caution with unknown contacts"
+        }
+      });
+    }
+  });
+
+  app.post("/api/gemini/chat", async (req, res) => {
+    try {
+      const { message, language } = req.body;
+      const response = await generateChatResponse(message, language);
+      res.json({ response });
+    } catch (error) {
+      console.error("Chatbot error:", error);
+      const { language } = req.body;
+      res.status(500).json({ 
+        error: "Chatbot unavailable",
+        fallback: language === 'hi' 
+          ? "क्षमा करें, मैं अभी उपलब्ध नहीं हूँ। कृपया बाद में प्रयास करें।"
+          : "Sorry, I'm not available right now. Please try again later."
+      });
+    }
+  });
+
+  app.post("/api/gemini/investigate", async (req, res) => {
+    try {
+      const { caseData } = req.body;
+      const analysis = await investigationAssistant(caseData);
+      res.json({ analysis });
+    } catch (error) {
+      console.error("Investigation AI error:", error);
+      res.status(500).json({ 
+        error: "Investigation AI failed",
+        fallback: {
+          keyEvidence: ["Manual evidence collection required"],
+          investigationSteps: ["Standard investigation procedure"],
+          leads: ["Follow up on provided information"],
+          forensics: ["Basic digital evidence preservation"],
+          legal: ["Standard legal compliance"]
+        }
+      });
     }
   });
 
@@ -571,57 +631,271 @@ This is an auto-generated draft. Please review and modify as needed.`;
     }
   });
 
-  // Gemini AI API endpoints
-  app.post("/api/gemini/analyze-scam", async (req, res) => {
+  // Six-Step Cyber Investigation & Takedown Workflow
+
+  // Step 1: REPORT - Prahaar Kavach (handled by existing scam reports endpoint)
+  
+  // Step 2: TRIAGE & DEPLOY - LEA Dashboard
+  app.post("/api/workflow/deploy-kautilya", async (req, res) => {
     try {
-      const { reportData } = req.body;
-      const analysis = await analyzeScamReport(reportData);
-      res.json({ analysis });
-    } catch (error) {
-      console.error('Gemini analysis error:', error);
-      res.status(500).json({ 
-        analysis: {
-          riskLevel: "Medium",
-          analysis: "Analysis temporarily unavailable",
-          recommendations: ["Manual review required"],
-          indicators: ["Standard verification needed"],
-          prevention: "Exercise caution"
-        }
+      const { reportId, officerId } = req.body;
+      
+      const report = await storage.getScamReport(reportId);
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      // Create Kautilya operation
+      const operationData = insertKautilyaOperationSchema.parse({
+        reportId,
+        officerId,
+        status: "initiated",
+        targetNumber: report.suspiciousNumbers?.[0] || null,
       });
+      
+      const operation = await storage.createKautilyaOperation({
+        ...operationData,
+        chatLog: [],
+        scammerDNA: {},
+        networkMatches: [],
+        vajraAuthorized: false,
+        vajraExecuted: false,
+        akhantaLedger: [{
+          action: "Operation Initiated",
+          timestamp: new Date().toISOString(),
+          hash: `init_${Date.now()}`
+        }]
+      });
+
+      res.json(operation);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to deploy Kautilya" });
     }
   });
 
-  app.post("/api/gemini/chat", async (req, res) => {
+  // Step 3: ENGAGE - MayaJaal + Kautilya 2.0
+  app.post("/api/workflow/engage-scammer", async (req, res) => {
     try {
-      const { message, language } = req.body;
-      const response = await generateChatResponse(message, language);
-      res.json({ response });
-    } catch (error) {
-      console.error('Gemini chat error:', error);
-      res.status(500).json({ 
-        response: req.body.language === 'hi' 
-          ? "क्षमा करें, मैं अभी उपलब्ध नहीं हूँ।" 
-          : "Sorry, I'm not available right now."
+      const { operationId, profileId, initialMessage } = req.body;
+      
+      // Simulate AI persona engagement
+      const personas = [
+        "Interested buyer looking for great deals",
+        "Young professional seeking investment opportunities", 
+        "Tech-savvy individual interested in online services"
+      ];
+      
+      const selectedPersona = personas[Math.floor(Math.random() * personas.length)];
+      
+      // Simulate scammer response with delay
+      setTimeout(async () => {
+        const chatLog = [
+          {
+            role: "mayajaal",
+            message: initialMessage || "Hello, I saw your offer. Can you tell me more about it?",
+            timestamp: new Date().toISOString()
+          },
+          {
+            role: "scammer", 
+            message: "Hello! Yes, this is genuine offer. We are giving 50% discount. You need to pay advance amount for confirmation.",
+            timestamp: new Date(Date.now() + 2000).toISOString()
+          }
+        ];
+
+        await storage.updateKautilyaOperation(operationId, {
+          status: "engaging",
+          chatLog,
+          akhantaLedger: [{
+            action: "Engagement Started",
+            timestamp: new Date().toISOString(), 
+            hash: `engage_${Date.now()}`
+          }]
+        });
+      }, 3000);
+
+      res.json({ 
+        status: "engagement_started",
+        persona: selectedPersona,
+        message: "AI persona is engaging with target..."
       });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to engage scammer" });
     }
   });
 
-  app.post("/api/gemini/investigate", async (req, res) => {
+  // Step 4: EXTRACT & ANALYZE - Scammer DNA Fingerprinting  
+  app.post("/api/workflow/extract-upi", async (req, res) => {
     try {
-      const { caseData } = req.body;
-      const analysis = await investigationAssistant(caseData);
-      res.json({ analysis });
-    } catch (error) {
-      console.error('Gemini investigation error:', error);
-      res.status(500).json({ 
-        analysis: {
-          keyEvidence: ["Manual evidence collection required"],
-          investigationSteps: ["Standard investigation procedure"],
-          leads: ["Follow up on provided information"],
-          forensics: ["Basic digital evidence preservation"],
-          legal: ["Standard legal compliance"]
-        }
+      const { operationId } = req.body;
+      
+      // Simulate UPI extraction
+      const extractedUPI = `scammer${Math.floor(Math.random() * 1000)}@paytm`;
+      
+      // Simulate DNA analysis
+      const scammerDNA = {
+        upiPattern: extractedUPI,
+        communicationStyle: "Urgent pressure tactics",
+        paymentMethods: ["UPI", "Bank Transfer"],
+        operatingHours: "9 AM - 6 PM IST",
+        responseTime: "2-5 minutes",
+        linguisticMarkers: ["Broken English", "Hindi mixed"]
+      };
+
+      // Find network matches (simulated)
+      const networkMatches = [
+        `related_${Math.floor(Math.random() * 100)}@gpay`,
+        `connected_${Math.floor(Math.random() * 100)}@phonepe`
+      ];
+
+      await storage.updateKautilyaOperation(operationId, {
+        status: "extracting",
+        extractedUPI,
+        scammerDNA,
+        networkMatches,
+        akhantaLedger: [{
+          action: "UPI Extracted & DNA Analyzed",
+          timestamp: new Date().toISOString(),
+          hash: `extract_${Date.now()}`
+        }]
       });
+
+      res.json({
+        extractedUPI,
+        scammerDNA,
+        networkMatches,
+        message: "UPI extracted and scammer DNA analyzed successfully"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to extract UPI" });
+    }
+  });
+
+  // Step 5: AUTHORIZE - Vajra (The Hammer)
+  app.post("/api/workflow/authorize-vajra", async (req, res) => {
+    try {
+      const { operationId, officerId, authCode } = req.body;
+      
+      // Simulate 2FA verification
+      if (authCode !== "123456") { // Simple demo auth
+        return res.status(401).json({ message: "Invalid authorization code" });
+      }
+
+      const authHash = `vajra_auth_${Date.now()}_${officerId}`;
+      
+      await storage.updateKautilyaOperation(operationId, {
+        vajraAuthorized: true,
+        akhantaLedger: [{
+          action: "Vajra Authorization Granted",
+          timestamp: new Date().toISOString(),
+          hash: authHash
+        }]
+      });
+
+      res.json({
+        authorized: true,
+        authHash,
+        message: "Vajra Strike authorized. Ready for takedown."
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Authorization failed" });
+    }
+  });
+
+  // Step 6: STRIKE & SECURE - Vajra + Akhanda
+  app.post("/api/workflow/execute-vajra", async (req, res) => {
+    try {
+      const { operationId } = req.body;
+      
+      const operation = await storage.getKautilyaOperation(operationId);
+      if (!operation?.vajraAuthorized) {
+        return res.status(403).json({ message: "Vajra not authorized" });
+      }
+
+      // Simulate takedown actions
+      const takedownActions = [
+        {
+          type: "freeze_upi",
+          target: operation.extractedUPI,
+          status: "executed",
+          timestamp: new Date().toISOString()
+        },
+        {
+          type: "block_number", 
+          target: operation.targetNumber,
+          status: "executed",
+          timestamp: new Date().toISOString()
+        },
+        {
+          type: "alert_banks",
+          target: "all_partner_banks",
+          status: "executed", 
+          timestamp: new Date().toISOString()
+        }
+      ];
+
+      // Create Vajra action records
+      for (const action of takedownActions) {
+        await storage.createVajraAction({
+          operationId,
+          actionType: action.type,
+          targetIdentifier: action.target || "",
+          status: "executed",
+          authorizedBy: operation.officerId,
+          authorizationHash: `exec_${Date.now()}`
+        });
+      }
+
+      // Update operation with final ledger
+      await storage.updateKautilyaOperation(operationId, {
+        status: "completed",
+        vajraExecuted: true,
+        akhantaLedger: [
+          ...(operation.akhantaLedger || []),
+          {
+            action: "Vajra Strike Executed",
+            timestamp: new Date().toISOString(),
+            hash: `strike_${Date.now()}`
+          },
+          {
+            action: "Operation Completed",
+            timestamp: new Date().toISOString(), 
+            hash: `complete_${Date.now()}`
+          }
+        ]
+      });
+
+      res.json({
+        executed: true,
+        takedownActions,
+        message: "Vajra strike completed. All targets neutralized.",
+        ledgerHash: `complete_${Date.now()}`
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Vajra execution failed" });
+    }
+  });
+
+  // Get operation status
+  app.get("/api/workflow/operation/:id", async (req, res) => {
+    try {
+      const operation = await storage.getKautilyaOperation(req.params.id);
+      if (!operation) {
+        return res.status(404).json({ message: "Operation not found" });
+      }
+      res.json(operation);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch operation" });
+    }
+  });
+
+  // Get all operations for an officer
+  app.get("/api/workflow/operations", async (req, res) => {
+    try {
+      const { officerId } = req.query;
+      const operations = await storage.getKautilyaOperationsByOfficer(officerId as string);
+      res.json(operations);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch operations" });
     }
   });
 

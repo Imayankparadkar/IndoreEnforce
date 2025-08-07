@@ -10,7 +10,13 @@ import {
   type FraudIdentifier,
   type InsertFraudIdentifier,
   type OfficerAction,
-  type InsertOfficerAction
+  type InsertOfficerAction,
+  type KautilyaOperation,
+  type InsertKautilyaOperation,
+  type MayajaalProfile,
+  type InsertMayajaalProfile,
+  type VajraAction,
+  type InsertVajraAction
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import crypto from "crypto";
@@ -51,6 +57,21 @@ export interface IStorage {
   createOfficerAction(action: InsertOfficerAction): Promise<OfficerAction>;
   getOfficerActions(): Promise<OfficerAction[]>;
   getOfficerActionsByOfficer(officerId: string): Promise<OfficerAction[]>;
+
+  // Kautilya Operations (6-step workflow)
+  createKautilyaOperation(operation: InsertKautilyaOperation): Promise<KautilyaOperation>;
+  getKautilyaOperation(id: string): Promise<KautilyaOperation | undefined>;
+  getKautilyaOperationsByOfficer(officerId: string): Promise<KautilyaOperation[]>;
+  updateKautilyaOperation(id: string, updates: Partial<KautilyaOperation>): Promise<KautilyaOperation | undefined>;
+
+  // Mayajaal Profiles
+  createMayajaalProfile(profile: InsertMayajaalProfile): Promise<MayajaalProfile>;
+  getMayajaalProfiles(): Promise<MayajaalProfile[]>;
+  updateMayajaalProfile(id: string, updates: Partial<MayajaalProfile>): Promise<MayajaalProfile | undefined>;
+
+  // Vajra Actions
+  createVajraAction(action: InsertVajraAction): Promise<VajraAction>;
+  getVajraActionsByOperation(operationId: string): Promise<VajraAction[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -60,6 +81,9 @@ export class MemStorage implements IStorage {
   private threatData: Map<string, ThreatData>;
   private fraudIdentifiers: Map<string, FraudIdentifier>;
   private officerActions: Map<string, OfficerAction>;
+  private kautilyaOperations: Map<string, KautilyaOperation>;
+  private mayajaalProfiles: Map<string, MayajaalProfile>;
+  private vajraActions: Map<string, VajraAction>;
 
   constructor() {
     this.users = new Map();
@@ -68,6 +92,9 @@ export class MemStorage implements IStorage {
     this.threatData = new Map();
     this.fraudIdentifiers = new Map();
     this.officerActions = new Map();
+    this.kautilyaOperations = new Map();
+    this.mayajaalProfiles = new Map();
+    this.vajraActions = new Map();
     
     // Initialize with some demo data
     this.initializeDemoData();
@@ -166,6 +193,9 @@ export class MemStorage implements IStorage {
     const scamReport: ScamReport = {
       ...report,
       location: report.location || null,
+      evidenceFiles: report.evidenceFiles || [],
+      suspiciousNumbers: report.suspiciousNumbers || [],
+      suspiciousUPIs: report.suspiciousUPIs || [],
       id,
       status: "new",
       riskLevel: "medium",
@@ -205,7 +235,9 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const caseInvestigation: CaseInvestigation = {
       ...investigation,
-      status: investigation.status || "active",
+      findings: investigation.findings || null,
+      actionsTaken: investigation.actionsTaken || [],
+      status: investigation.status || "ongoing",
       priority: investigation.priority || "medium",
       id,
       createdAt: new Date(),
@@ -269,6 +301,8 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const fraudIdentifier: FraudIdentifier = {
       ...identifier,
+      aliases: identifier.aliases || [],
+      networkConnections: identifier.networkConnections || [],
       reportCount: identifier.reportCount || 1,
       riskScore: identifier.riskScore || 50,
       id,
@@ -314,6 +348,8 @@ export class MemStorage implements IStorage {
     
     const officerAction: OfficerAction = {
       ...action,
+      targetId: action.targetId || null,
+      details: action.details || null,
       id,
       timestamp,
       immutableHash,
@@ -332,6 +368,89 @@ export class MemStorage implements IStorage {
     return Array.from(this.officerActions.values())
       .filter(action => action.officerId === officerId)
       .sort((a, b) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0));
+  }
+
+  // Kautilya Operations (6-step workflow)
+  async createKautilyaOperation(operation: InsertKautilyaOperation): Promise<KautilyaOperation> {
+    const id = randomUUID();
+    const kautilyaOperation: KautilyaOperation = {
+      ...operation,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      chatLog: operation.chatLog || [],
+      scammerDNA: operation.scammerDNA || {},
+      networkMatches: operation.networkMatches || [],
+      akhantaLedger: operation.akhantaLedger || [],
+    };
+    this.kautilyaOperations.set(id, kautilyaOperation);
+    return kautilyaOperation;
+  }
+
+  async getKautilyaOperation(id: string): Promise<KautilyaOperation | undefined> {
+    return this.kautilyaOperations.get(id);
+  }
+
+  async getKautilyaOperationsByOfficer(officerId: string): Promise<KautilyaOperation[]> {
+    return Array.from(this.kautilyaOperations.values())
+      .filter(op => op.officerId === officerId)
+      .sort((a, b) => (b.updatedAt?.getTime() || 0) - (a.updatedAt?.getTime() || 0));
+  }
+
+  async updateKautilyaOperation(id: string, updates: Partial<KautilyaOperation>): Promise<KautilyaOperation | undefined> {
+    const operation = this.kautilyaOperations.get(id);
+    if (!operation) return undefined;
+    
+    const updated = { ...operation, ...updates, updatedAt: new Date() };
+    this.kautilyaOperations.set(id, updated);
+    return updated;
+  }
+
+  // Mayajaal Profiles
+  async createMayajaalProfile(profile: InsertMayajaalProfile): Promise<MayajaalProfile> {
+    const id = randomUUID();
+    const mayajaalProfile: MayajaalProfile = {
+      ...profile,
+      id,
+      createdAt: new Date(),
+      isActive: profile.isActive ?? true,
+      usageCount: profile.usageCount || 0,
+      successRate: profile.successRate || 0,
+    };
+    this.mayajaalProfiles.set(id, mayajaalProfile);
+    return mayajaalProfile;
+  }
+
+  async getMayajaalProfiles(): Promise<MayajaalProfile[]> {
+    return Array.from(this.mayajaalProfiles.values()).filter(p => p.isActive);
+  }
+
+  async updateMayajaalProfile(id: string, updates: Partial<MayajaalProfile>): Promise<MayajaalProfile | undefined> {
+    const profile = this.mayajaalProfiles.get(id);
+    if (!profile) return undefined;
+    
+    const updated = { ...profile, ...updates };
+    this.mayajaalProfiles.set(id, updated);
+    return updated;
+  }
+
+  // Vajra Actions
+  async createVajraAction(action: InsertVajraAction): Promise<VajraAction> {
+    const id = randomUUID();
+    const vajraAction: VajraAction = {
+      ...action,
+      id,
+      createdAt: new Date(),
+      executedAt: action.status === 'executed' ? new Date() : null,
+    };
+    this.vajraActions.set(id, vajraAction);
+    return vajraAction;
+  }
+
+  async getVajraActionsByOperation(operationId: string): Promise<VajraAction[]> {
+    return Array.from(this.vajraActions.values())
+      .filter(action => action.operationId === operationId)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
   }
 }
 

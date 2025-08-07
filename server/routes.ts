@@ -42,11 +42,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: req.body.amount ? parseInt(req.body.amount) : null,
         suspiciousNumbers: req.body.suspiciousNumbers ? 
           (typeof req.body.suspiciousNumbers === 'string' ? 
-            req.body.suspiciousNumbers.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : 
+            (req.body.suspiciousNumbers.startsWith('[') ? 
+              JSON.parse(req.body.suspiciousNumbers).filter((s: string) => s.trim().length > 0) :
+              req.body.suspiciousNumbers.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)) : 
             req.body.suspiciousNumbers) : [],
         suspiciousUPIs: req.body.suspiciousUPIs ? 
           (typeof req.body.suspiciousUPIs === 'string' ? 
-            req.body.suspiciousUPIs.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : 
+            (req.body.suspiciousUPIs.startsWith('[') ? 
+              JSON.parse(req.body.suspiciousUPIs).filter((s: string) => s.trim().length > 0) :
+              req.body.suspiciousUPIs.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)) : 
             req.body.suspiciousUPIs) : []
       };
       

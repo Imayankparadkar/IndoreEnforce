@@ -13,6 +13,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeScamReport } from "../../lib/gemini";
 import { saveReportToFirebase } from "../../lib/firebase-integration";
+import { saveImageToLocal, storeEvidenceFileReference } from "../../lib/local-storage";
 import { 
   Shield, 
   AlertTriangle, 
@@ -68,6 +69,7 @@ export function EnhancedBrahmaNet() {
 
   const submitReportMutation = useMutation({
     mutationFn: async (reportData: FormData) => {
+      // First submit to backend API
       const response = await fetch('/api/scam-reports', {
         method: 'POST',
         body: reportData,
@@ -77,7 +79,45 @@ export function EnhancedBrahmaNet() {
         throw new Error('Failed to submit report');
       }
       
-      return response.json();
+      const result = await response.json();
+      
+      // Handle image storage locally
+      const evidenceFiles = reportData.getAll('evidence') as File[];
+      if (evidenceFiles.length > 0) {
+        try {
+          const fileReferences = await Promise.all(
+            evidenceFiles.map(async (file) => {
+              if (file.type.startsWith('image/')) {
+                // Store images locally
+                const imageId = await saveImageToLocal(file, result.id);
+                return `local_image:${imageId}`;
+              } else {
+                // For non-image files, store reference only
+                return `local_file:${result.id}_${Date.now()}_${file.name}`;
+              }
+            })
+          );
+          result.evidenceFiles = fileReferences;
+          console.log('✅ Evidence files processed:', fileReferences);
+        } catch (fileError) {
+          console.error('File storage error (continuing):', fileError);
+        }
+      }
+      
+      // Save to Firebase for real-time features (excluding image data)
+      try {
+        const firebaseData = {
+          ...result,
+          // Only store file references in Firebase, not actual image data
+          evidenceFiles: result.evidenceFiles || []
+        };
+        await saveReportToFirebase(firebaseData);
+        console.log('✅ Report saved to Firebase');
+      } catch (firebaseError) {
+        console.error('Firebase save failed (continuing):', firebaseError);
+      }
+      
+      return result;
     },
     onSuccess: () => {
       toast({

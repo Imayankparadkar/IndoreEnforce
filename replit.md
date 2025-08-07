@@ -33,10 +33,13 @@ Preferred communication style: Simple, everyday language.
 - **Mock Data Generation**: Faker.js for demonstration data in development
 
 ### Database Design
-- **PostgreSQL**: Primary database using Drizzle ORM for type-safe queries
-- **Schema Organization**: Separate tables for users, scam reports, case investigations, threat data, fraud identifiers, and officer actions
-- **Relationship Structure**: Foreign key relationships between reports, investigations, and officer actions
-- **JSON Columns**: Flexible storage for arrays (evidence files, suspicious numbers, actions taken) and analysis results
+- **Hybrid Storage Architecture**: 
+  - **Firebase Firestore**: Real-time database for reports, investigations, threat data, and officer actions
+  - **Local Browser Storage**: Secure storage for images and evidence files (privacy and performance)
+  - **In-Memory Storage**: Development fallback for local testing
+- **Schema Organization**: Separate collections for users, scam reports, case investigations, threat data, fraud identifiers, and officer actions
+- **Real-time Synchronization**: Firebase enables live updates across all connected clients
+- **JSON Documents**: Flexible NoSQL structure for complex data types and arrays
 
 ### AI Integration
 - **Google Gemini AI**: Integrated for scam case analysis and fraud identifier assessment
@@ -59,8 +62,9 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 ### Cloud Services
-- **Neon Database**: Serverless PostgreSQL hosting for production deployment
+- **Firebase**: Real-time database for report storage and live data synchronization
 - **Google AI Platform**: Gemini API for AI-powered analysis and insights
+- **Local Browser Storage**: Secure local storage for images and evidence files (privacy-focused)
 
 ### Frontend Libraries
 - **Radix UI**: Accessible component primitives for complex UI interactions

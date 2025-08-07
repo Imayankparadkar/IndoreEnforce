@@ -36,8 +36,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Received report data:', req.body);
       
+      // Transform form data to match schema
+      const transformedData = {
+        ...req.body,
+        amount: req.body.amount ? parseInt(req.body.amount) : null,
+        suspiciousNumbers: req.body.suspiciousNumbers ? 
+          (typeof req.body.suspiciousNumbers === 'string' ? 
+            req.body.suspiciousNumbers.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : 
+            req.body.suspiciousNumbers) : [],
+        suspiciousUPIs: req.body.suspiciousUPIs ? 
+          (typeof req.body.suspiciousUPIs === 'string' ? 
+            req.body.suspiciousUPIs.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0) : 
+            req.body.suspiciousUPIs) : []
+      };
+      
+      console.log('Transformed data:', transformedData);
+      
       // Parse and validate the data
-      const reportData = insertScamReportSchema.parse(req.body);
+      const reportData = insertScamReportSchema.parse(transformedData);
       
       // Handle file uploads
       const files = req.files as Express.Multer.File[];
@@ -451,6 +467,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result);
     } catch (error) {
       res.status(500).json({ message: "Failed to analyze media file" });
+    }
+  });
+
+  // Gemini AI Chat endpoint
+  app.post("/api/gemini/chat", async (req, res) => {
+    try {
+      const { message, language } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const response = await generateChatResponse(message, language || 'en');
+      res.json({ response });
+    } catch (error) {
+      console.error('Chat API Error:', error);
+      const { language: lang } = req.body;
+      const fallback = lang === 'hi' 
+        ? "क्षमा करें, मैं अभी उपलब्ध नहीं हूँ। कृपया बाद में प्रयास करें।"
+        : "Sorry, I'm not available right now. Please try again later.";
+      res.json({ fallback });
     }
   });
 

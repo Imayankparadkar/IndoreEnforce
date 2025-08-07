@@ -12,6 +12,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { analyzeScamReport } from "../../lib/gemini";
+import { saveReportToFirebase } from "../../lib/firebase-integration";
 import { 
   Shield, 
   AlertTriangle, 

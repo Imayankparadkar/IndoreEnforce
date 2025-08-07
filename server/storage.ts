@@ -101,16 +101,47 @@ export class MemStorage implements IStorage {
   }
 
   private initializeDemoData() {
-    // Create demo officer user
-    const officerId = randomUUID();
-    const officer: User = {
-      id: officerId,
-      username: "officer.sharma",
-      password: "demo123",
-      role: "officer",
-      createdAt: new Date(),
-    };
-    this.users.set(officerId, officer);
+    // Create demo users
+    const demoUsers = [
+      {
+        username: "officer.sharma",
+        password: "demo123",
+        role: "officer" as const,
+      },
+      {
+        username: "officer1",
+        password: "password123", 
+        role: "officer" as const,
+      },
+      {
+        username: "inspector",
+        password: "inspector123",
+        role: "officer" as const,
+      },
+      {
+        username: "admin",
+        password: "admin123",
+        role: "officer" as const,
+      },
+      {
+        username: "citizen1",
+        password: "password123",
+        role: "citizen" as const,
+      }
+    ];
+
+    // Create users
+    demoUsers.forEach(userData => {
+      const userId = randomUUID();
+      const user: User = {
+        id: userId,
+        username: userData.username,
+        password: userData.password,
+        role: userData.role,
+        createdAt: new Date(),
+      };
+      this.users.set(userId, user);
+    });
 
     // Add some demo threat data for Indore locations
     const locations = [

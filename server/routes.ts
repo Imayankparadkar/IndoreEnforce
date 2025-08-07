@@ -34,6 +34,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/scam-reports", upload.array('evidence'), async (req, res) => {
     try {
+      console.log('Received report data:', req.body);
+      
+      // Parse and validate the data
       const reportData = insertScamReportSchema.parse(req.body);
       
       // Handle file uploads
@@ -66,7 +69,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(report);
     } catch (error) {
-      res.status(400).json({ message: "Invalid report data" });
+      console.error('Report submission error:', error);
+      res.status(400).json({ 
+        message: "Invalid report data",
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 

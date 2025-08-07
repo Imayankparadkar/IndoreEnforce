@@ -224,9 +224,10 @@ export class MemStorage implements IStorage {
     const scamReport: ScamReport = {
       ...report,
       location: report.location || null,
-      evidenceFiles: report.evidenceFiles || [],
-      suspiciousNumbers: report.suspiciousNumbers || [],
-      suspiciousUPIs: report.suspiciousUPIs || [],
+      amount: report.amount || null,
+      evidenceFiles: (report.evidenceFiles as string[]) || [],
+      suspiciousNumbers: (report.suspiciousNumbers as string[]) || [],
+      suspiciousUPIs: (report.suspiciousUPIs as string[]) || [],
       id,
       status: "new",
       riskLevel: "medium",
@@ -267,7 +268,7 @@ export class MemStorage implements IStorage {
     const caseInvestigation: CaseInvestigation = {
       ...investigation,
       findings: investigation.findings || null,
-      actionsTaken: investigation.actionsTaken || [],
+      actionsTaken: (investigation.actionsTaken as string[]) || [],
       status: investigation.status || "ongoing",
       priority: investigation.priority || "medium",
       id,
@@ -332,10 +333,11 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const fraudIdentifier: FraudIdentifier = {
       ...identifier,
-      aliases: identifier.aliases || [],
-      networkConnections: identifier.networkConnections || [],
+      aliases: (identifier.aliases as string[]) || [],
+      networkConnections: (identifier.networkConnections as string[]) || [],
       reportCount: identifier.reportCount || 1,
       riskScore: identifier.riskScore || 50,
+      isBlocked: identifier.isBlocked || false,
       id,
       firstReported: new Date(),
       lastActive: new Date(),
@@ -406,13 +408,18 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const kautilyaOperation: KautilyaOperation = {
       ...operation,
+      status: operation.status || "initiated",
+      targetNumber: operation.targetNumber || null,
+      extractedUPI: operation.extractedUPI || null,
+      vajraAuthorized: operation.vajraAuthorized || false,
+      vajraExecuted: operation.vajraExecuted || false,
       id,
       createdAt: new Date(),
       updatedAt: new Date(),
-      chatLog: operation.chatLog || [],
-      scammerDNA: operation.scammerDNA || {},
-      networkMatches: operation.networkMatches || [],
-      akhantaLedger: operation.akhantaLedger || [],
+      chatLog: (operation.chatLog as Array<{role: string, message: string, timestamp: string}>) || [],
+      scammerDNA: (operation.scammerDNA as Record<string, any>) || {},
+      networkMatches: (operation.networkMatches as string[]) || [],
+      akhantaLedger: (operation.akhantaLedger as Array<{action: string, timestamp: string, hash: string}>) || [],
     };
     this.kautilyaOperations.set(id, kautilyaOperation);
     return kautilyaOperation;
@@ -472,6 +479,7 @@ export class MemStorage implements IStorage {
       ...action,
       id,
       createdAt: new Date(),
+      status: action.status || 'pending',
       executedAt: action.status === 'executed' ? new Date() : null,
     };
     this.vajraActions.set(id, vajraAction);

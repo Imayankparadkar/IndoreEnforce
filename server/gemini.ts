@@ -1,20 +1,35 @@
 import { GoogleGenAI } from "@google/genai";
 
-if (!process.env.GEMINI_API_KEY) {
-  console.warn('GEMINI_API_KEY is not set. AI features will use fallback responses.');
+const genAI = new GoogleGenAI({ 
+  apiKey: process.env.GEMINI_API_KEY || '' 
+});
+
+// Test API key on startup
+async function testGeminiConnection() {
+  if (!process.env.GEMINI_API_KEY) {
+    console.error('❌ GEMINI_API_KEY is not set!');
+    return false;
+  }
+  
+  try {
+    const response = await genAI.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: "Hello, test connection",
+    });
+    console.log('✅ Gemini API connected successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Gemini API connection failed:', error);
+    return false;
+  }
 }
 
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+// Test connection immediately
+testGeminiConnection();
 
 export async function analyzeScamReport(reportData: any) {
-  if (!genAI) {
-    return {
-      riskLevel: "Medium",
-      analysis: "AI analysis unavailable. Manual review required.",
-      recommendations: ["File FIR immediately", "Block suspicious numbers", "Monitor financial accounts"],
-      indicators: ["Unusual payment requests", "Pressure tactics", "Too good to be true offers"],
-      prevention: "Always verify before making payments or sharing personal information"
-    };
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('Gemini API key not configured');
   }
 
   try {
@@ -69,10 +84,8 @@ export async function analyzeScamReport(reportData: any) {
 }
 
 export async function generateChatResponse(message: string, language: string = 'en') {
-  if (!genAI) {
-    return language === 'hi' 
-      ? "नमस्ते! मैं प्रहार 360 की AI सहायक हूं। मैं साइबर अपराध की रिपोर्टिंग और सुरक्षा के बारे में जानकारी दे सकती हूं।"
-      : "Hello! I'm Prahaar 360's AI assistant. I can help with cybercrime reporting and security information.";
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('Gemini API key not configured');
   }
 
   try {
@@ -110,14 +123,8 @@ export async function generateChatResponse(message: string, language: string = '
 }
 
 export async function investigationAssistant(caseData: any) {
-  if (!genAI) {
-    return {
-      keyEvidence: ["Digital communication records", "Financial transaction trails", "IP address logs"],
-      investigationSteps: ["Collect digital evidence", "Interview victims", "Track financial flows", "Coordinate with banks"],
-      leads: ["Check social media profiles", "Verify phone numbers", "Bank account details", "Cross-reference with similar cases"],
-      forensics: ["Preserve digital evidence", "Network analysis", "Device forensics"],
-      legal: ["Ensure proper documentation", "Follow legal procedures", "Coordinate with legal team"]
-    };
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('Gemini API key not configured');
   }
 
   try {

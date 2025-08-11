@@ -1,0 +1,156 @@
+Officer Portal – Real-Time AI-Driven Investigation Workflow
+“From Complaint to Crackdown – in a Single Flow”
+
+✅ 🌐 Overview:
+This portal is the operational brain of Project Prahaar 360 – Indore Edition, designed specifically for Cyber Crime Units to:
+
+Visualize complaints in real-time
+
+Launch live AI-engaged sting operations
+
+Analyze scammers’ digital identity footprint
+
+Perform rapid UPI-based takedown
+
+Log all actions immutably via blockchain
+
+📊 🧭 Six-Step Cyber Investigation & Takedown Workflow
+🔹 Step 1: REPORT – Prahaar Kavach (The Shield)
+A user from Indore (e.g., Priya) sees a suspicious Army ad online.
+
+She becomes skeptical and opens the Prahaar Kavach mobile/web app.
+
+Quick Report Form:
+
+Fields: Phone number, conversation screenshots, scam type (dropdown), optional audio.
+
+Once submitted, the complaint:
+
+Is automatically scored for urgency (e.g., scam type + history of number).
+
+Enters the LEA Officer Dashboard in real time with “High Priority” tag.
+
+🔹 Step 2: TRIAGE & DEPLOY – LEA Dashboard Engagement
+Officer receives Priya’s report with metadata (location, phone, past patterns).
+
+System automatically:
+
+Checks if the number is linked to an ongoing Kautilya operation.
+
+If YES → links the complaint to that instance.
+
+If NO → officer clicks “Deploy Kautilya 2.0”.
+
+The Officer sees:
+
+Timeline of the complaint.
+
+Previous cases matched to the number.
+
+"Start Hunt" button with MayaJaal integration.
+
+🔹 Step 3: ENGAGE – MayaJaal + Kautilya 2.0
+AI persona (via MayaJaal) is generated: e.g., a woman interested in buying.
+
+Kautilya initiates a chat with the scammer using:
+
+Pre-programmed fake identities.
+
+Simulated delay (using time.sleep) for realistic chat feel.
+
+Objective: extract payment instructions (e.g., UPI ID).
+
+🔹 Step 4: EXTRACT & ANALYZE – Scammer DNA Fingerprinting
+Scammer responds with fauji47@okbank.
+
+System:
+
+Auto-secures the UPI ID (encrypt + save).
+
+Runs “Scammer DNA” engine:
+
+Links UPI ID to other known virtual numbers, emails, app patterns.
+
+Detects patterns (e.g., same UPI linked to 3 earlier scams).
+
+Dashboard updates with:
+
+Network match data
+
+Heatmap of related cases
+
+Profile of probable scam ring
+
+🔹 Step 5: AUTHORIZE – Vajra (The Hammer)
+Officer sees alert:
+
+“HUNT SUCCESSFUL – UPI ID EXTRACTED — MATCHED WITH 3 SCAMS”
+
+Big red button appears: “Authorize Vajra: Scorched Earth Protocol”
+
+Officer must confirm with:
+
+GovCert Login + 2FA + Officer ID
+
+System initiates takedown cascade.
+
+🔹 Step 6: STRIKE & SECURE – Vajra + Akhanda
+Vajra sends simulated POST requests (mock API) to payment gateway for takedown.
+
+All linked UPI accounts are "frozen" in the simulation.
+
+Akhanda writes the full trail:
+
+Report received
+
+Hunt initiated
+
+UPI extracted
+
+DNA matched
+
+Officer authorization
+
+Takedown confirmed
+
+Ledger View:
+
+Shows hashes of all actions.
+
+Immutable for evidence.
+
+Displayed in the “Akhanda Ledger Panel” of the Officer UI.
+
+🔁 Live Simulation Loop for Demo Presentation
+To help you show this in your hackathon presentation, implement:
+
+Faker library to generate:
+
+Fake user reports
+
+Synthetic scammers
+
+Simulated UPI IDs
+
+Timer-based complaint injection every 3 minutes:
+
+New mock scam report appears
+
+Graphs update on Indore Cybercrime Dashboard
+
+Officers triage and deploy in real time
+
+💬 Multilingual & UX Enhancements
+Full UI + Chatbot support in:
+
+Hindi
+
+English
+
+Marathi (optional)
+
+Chatbot can help:
+
+Victims file complaints
+
+Officers navigate dashboard

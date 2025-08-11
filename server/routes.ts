@@ -947,6 +947,76 @@ This is an auto-generated draft. Please review and modify as needed.`;
     }
   });
 
+  // MayaJaal Profiles endpoints for Kautilya 2.0
+  app.get("/api/mayajaal-profiles", async (req, res) => {
+    try {
+      const profiles = [
+        {
+          id: "profile-1",
+          profileName: "Shalini - Army Wife",
+          persona: "Army officer's wife from Indore",
+          backstory: "Married to Colonel Sharma, looking to buy army equipment",
+          communicationStyle: "Polite, trusting, uses military terminology"
+        },
+        {
+          id: "profile-2", 
+          profileName: "Rajesh - Business Owner",
+          persona: "Small business owner needing urgent loan",
+          backstory: "Owns a medical shop, needs quick loan for expansion",
+          communicationStyle: "Professional, time-pressed, willing to pay fees"
+        },
+        {
+          id: "profile-3",
+          profileName: "Priya - Job Seeker",
+          persona: "Fresh graduate looking for employment",
+          backstory: "Recently graduated, eager to get a government job",
+          communicationStyle: "Enthusiastic, naive, ready to pay registration fees"
+        }
+      ];
+      res.json(profiles);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch MayaJaal profiles" });
+    }
+  });
+
+  // Kautilya Operations endpoints
+  app.post("/api/kautilya-operations", async (req, res) => {
+    try {
+      const operationData = {
+        id: 'KAU-' + Date.now().toString(36),
+        reportId: req.body.reportId,
+        officerId: req.body.officerId,
+        targetNumber: req.body.targetNumber,
+        status: req.body.status,
+        createdAt: new Date().toISOString()
+      };
+      
+      res.json(operationData);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create Kautilya operation" });
+    }
+  });
+
+  // Vajra Actions endpoints
+  app.post("/api/vajra-actions", async (req, res) => {
+    try {
+      const vajraAction = {
+        id: 'VAJ-' + Date.now().toString(36),
+        operationId: req.body.operationId,
+        actionType: req.body.actionType,
+        targetIdentifier: req.body.targetIdentifier,
+        authorizedBy: req.body.authorizedBy,
+        authorizationHash: req.body.authorizationHash,
+        status: req.body.status,
+        createdAt: new Date().toISOString()
+      };
+
+      res.json(vajraAction);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create Vajra action" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

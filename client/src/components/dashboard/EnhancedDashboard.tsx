@@ -19,7 +19,12 @@ import {
   FileText,
   Activity,
   Eye,
-  AlertCircle
+  AlertCircle,
+  Bell,
+  Search,
+  XCircle,
+  LogIn,
+  CreditCard
 } from "lucide-react";
 import CountUp from 'react-countup';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
@@ -72,6 +77,15 @@ interface RecentReport {
 export function EnhancedDashboard() {
   const { t } = useLanguage();
   const { currentUser, userRole } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    message: string;
+    time: string;
+    type: 'alert' | 'report' | 'update';
+    read: boolean;
+  }>>([]);
   const [stats, setStats] = useState<DashboardStats>({
     totalReports: 0,
     activeThreats: 0,
@@ -140,6 +154,33 @@ export function EnhancedDashboard() {
   // Initial data setup
   useEffect(() => {
     generateDemoReports();
+    
+    // Initialize notifications with some sample data
+    const initialNotifications = [
+      {
+        id: '1',
+        message: 'High priority UPI fraud alert: ₹50,000 scam detected in Vijay Nagar',
+        time: new Date().toLocaleTimeString(),
+        type: 'alert' as const,
+        read: false
+      },
+      {
+        id: '2',
+        message: 'Officer IND002 completed investigation case #KAU-234RT',
+        time: new Date(Date.now() - 300000).toLocaleTimeString(),
+        type: 'update' as const,
+        read: false
+      },
+      {
+        id: '3',
+        message: 'Weekly threat analysis report is ready for review',
+        time: new Date(Date.now() - 600000).toLocaleTimeString(),
+        type: 'report' as const,
+        read: true
+      }
+    ];
+    setNotifications(initialNotifications);
+    
     // Set initial stats
     setStats(prev => ({
       ...prev,
@@ -147,6 +188,20 @@ export function EnhancedDashboard() {
       activeThreats: 23,
       casesResolved: 1156
     }));
+
+    // Simulate new notifications periodically
+    const notificationInterval = setInterval(() => {
+      const newNotification = {
+        id: Date.now().toString(),
+        message: `New ${['urgent', 'high priority', 'medium priority'][Math.floor(Math.random() * 3)]} alert: ${['UPI fraud', 'WhatsApp scam', 'Phone fraud', 'Investment scam'][Math.floor(Math.random() * 4)]} detected`,
+        time: new Date().toLocaleTimeString(),
+        type: ['alert', 'report', 'update'][Math.floor(Math.random() * 3)] as 'alert' | 'report' | 'update',
+        read: false
+      };
+      setNotifications(prev => [newNotification, ...prev.slice(0, 9)]);
+    }, 45000); // New notification every 45 seconds
+
+    return () => clearInterval(notificationInterval);
   }, []);
 
   // Update stats when real-time data changes
@@ -277,13 +332,122 @@ export function EnhancedDashboard() {
                   Last updated: {lastUpdate.toLocaleTimeString()}
                 </p>
               </div>
-              <div className="text-center">
-                <div className="bg-white/20 rounded-lg p-4">
-                  <Shield className="w-12 h-12 mx-auto mb-2" />
-                  <div className="text-sm">System Status</div>
-                  <div className="text-xs text-green-300 flex items-center justify-center gap-1">
-                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                    Operational
+              
+              {/* Navigation Controls */}
+              <div className="flex items-center gap-4">
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-300 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search threats, reports, officers..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-blue-200 focus:ring-2 focus:ring-white/30 focus:border-transparent w-64"
+                  />
+                  {searchTerm && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSearchTerm("")}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 text-blue-200 hover:text-white"
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Notification Icon */}
+                <div className="relative">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="relative text-white hover:bg-white/10"
+                    onClick={() => setShowNotifications(!showNotifications)}
+                  >
+                    <Bell className="w-5 h-5" />
+                    {notifications.filter(n => !n.read).length > 0 && (
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center animate-bounce">
+                        <span className="text-xs text-white font-bold">
+                          {notifications.filter(n => !n.read).length}
+                        </span>
+                      </div>
+                    )}
+                  </Button>
+                  
+                  {/* Notification Dropdown */}
+                  {showNotifications && (
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
+                      <div className="p-3 border-b border-gray-200 bg-gray-50">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-gray-900">System Notifications</h3>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                            }}
+                            className="text-xs"
+                          >
+                            Mark All Read
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="p-4 text-center text-gray-500">No notifications</div>
+                        ) : (
+                          notifications.map((notification) => (
+                            <div 
+                              key={notification.id}
+                              className={`p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                                !notification.read ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                              }`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <div className={`w-2 h-2 rounded-full mt-2 ${
+                                  notification.type === 'alert' ? 'bg-red-500' :
+                                  notification.type === 'report' ? 'bg-blue-500' :
+                                  'bg-green-500'
+                                }`} />
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                                  <p className="text-xs text-gray-500">{notification.time}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="p-3 bg-gray-50 text-center">
+                        <Button variant="ghost" size="sm" className="text-xs text-blue-600">
+                          View All Notifications
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Officer Portal Access */}
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="border-white/30 text-white hover:bg-white/10"
+                  onClick={() => window.location.href = '/officer'}
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Officer Portal
+                </Button>
+
+                {/* System Status */}
+                <div className="text-center">
+                  <div className="bg-white/20 rounded-lg p-3">
+                    <Shield className="w-8 h-8 mx-auto mb-1" />
+                    <div className="text-xs">System Status</div>
+                    <div className="text-xs text-green-300 flex items-center justify-center gap-1">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                      Operational
+                    </div>
                   </div>
                 </div>
               </div>

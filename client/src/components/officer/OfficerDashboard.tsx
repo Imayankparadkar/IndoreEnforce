@@ -69,6 +69,15 @@ export function OfficerDashboard({ officer, onLogout, onStartKautilya }: Officer
   const [activeTab, setActiveTab] = useState("reports");
   const [notifications, setNotifications] = useState<number>(0);
   const [liveReports, setLiveReports] = useState<ScamReport[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationList, setNotificationList] = useState<Array<{
+    id: string;
+    message: string;
+    time: string;
+    type: 'new_report' | 'operation_update' | 'alert';
+    read: boolean;
+  }>>([]);
   const [realtimeStats, setRealtimeStats] = useState({
     todayReports: 0,
     activeOperations: 0,
@@ -146,6 +155,16 @@ export function OfficerDashboard({ officer, onLogout, onStartKautilya }: Officer
         todayReports: prev.todayReports + 1
       }));
 
+      // Add to notification list
+      const newNotification = {
+        id: Date.now().toString(),
+        message: `New ${randomComplaint.riskLevel} priority complaint from ${randomComplaint.reporterName}`,
+        time: new Date().toLocaleTimeString(),
+        type: 'new_report' as const,
+        read: false
+      };
+      setNotificationList(prev => [newNotification, ...prev.slice(0, 9)]); // Keep last 10
+
       // Show enhanced notification toast with action buttons
       const notification = document.createElement('div');
       notification.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-600 to-red-700 text-white p-4 rounded-xl shadow-2xl z-50 border border-red-500 max-w-sm';
@@ -205,15 +224,29 @@ export function OfficerDashboard({ officer, onLogout, onStartKautilya }: Officer
     return () => clearInterval(interval);
   }, []);
 
-  const priorityReports = reports
-    .filter(r => r.riskLevel === 'high' && r.status === 'new')
+  // Filter and search reports
+  const filteredReports = reports.filter(report => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      report.reporterName.toLowerCase().includes(searchLower) ||
+      report.scamType.toLowerCase().includes(searchLower) ||
+      report.description.toLowerCase().includes(searchLower) ||
+      report.suspiciousNumbers.some(num => num.includes(searchTerm)) ||
+      report.suspiciousUPIs.some(upi => upi.toLowerCase().includes(searchLower)) ||
+      (report.location && report.location.toLowerCase().includes(searchLower))
+    );
+  });
+
+  const priorityReports = [...filteredReports, ...liveReports]
+    .filter(r => r.riskLevel === 'high' && (r.status === 'new' || !r.status))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const myAssignedReports = reports
-    .filter(r => r.assignedOfficer === officer.id)
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  const myAssignedReports = [...filteredReports, ...liveReports]
+    .filter(r => r.assignedOfficer === officer.id || (Math.random() > 0.7 && r.riskLevel === 'high'))
+    .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime());
 
-  const allReports = reports
+  const allReports = [...filteredReports, ...liveReports]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const getStatusColor = (status: string) => {
@@ -308,7 +341,12 @@ export function OfficerDashboard({ officer, onLogout, onStartKautilya }: Officer
             </div>
             
             <div className="relative">
-              <Button variant="outline" size="sm" className="relative">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="relative"
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
                 <Bell className="w-4 h-4" />
                 {notifications > 0 && (
                   <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center animate-bounce">
@@ -316,6 +354,53 @@ export function OfficerDashboard({ officer, onLogout, onStartKautilya }: Officer
                   </div>
                 )}
               </Button>
+              
+              {/* Notification Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                  <div className="p-3 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-gray-900">Notifications</h3>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {
+                          setNotifications(0);
+                          setNotificationList(prev => prev.map(n => ({ ...n, read: true })));
+                        }}
+                      >
+                        Mark All Read
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {notificationList.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">No notifications</div>
+                    ) : (
+                      notificationList.map((notification) => (
+                        <div 
+                          key={notification.id}
+                          className={`p-3 border-b border-gray-100 hover:bg-gray-50 ${
+                            !notification.read ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className={`w-2 h-2 rounded-full mt-2 ${
+                              notification.type === 'new_report' ? 'bg-red-500' :
+                              notification.type === 'operation_update' ? 'bg-blue-500' :
+                              'bg-yellow-500'
+                            }`} />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">{notification.message}</p>
+                              <p className="text-xs text-gray-500">{notification.time}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <Button variant="outline" size="sm" onClick={onLogout}>
               <LogOut className="w-4 h-4 mr-2" />
@@ -379,20 +464,49 @@ export function OfficerDashboard({ officer, onLogout, onStartKautilya }: Officer
           </Card>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search reports by name, type, phone, UPI, location..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
+            {searchTerm && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+              >
+                <XCircle className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+          {searchTerm && (
+            <p className="text-sm text-gray-600 mt-2">
+              Found {allReports.length} reports matching "{searchTerm}"
+            </p>
+          )}
+        </div>
+
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4" />
-              Priority Reports
+              Priority Reports ({priorityReports.length})
             </TabsTrigger>
             <TabsTrigger value="assigned" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
-              My Cases
+              My Cases ({myAssignedReports.length})
             </TabsTrigger>
             <TabsTrigger value="all" className="flex items-center gap-2">
               <Activity className="w-4 h-4" />
-              All Reports
+              All Reports ({allReports.length})
             </TabsTrigger>
           </TabsList>
 
@@ -700,7 +814,7 @@ function ReportDetailsModal({ report, onClose, onStartKautilya }: ReportDetailsM
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Badge className={getRiskColor(report.riskLevel)} className="px-3 py-1">
+              <Badge className={`${getRiskColor(report.riskLevel)} px-3 py-1`}>
                 {report.riskLevel.toUpperCase()} RISK
               </Badge>
               <Button variant="outline" onClick={onClose}>
@@ -829,7 +943,7 @@ function ReportDetailsModal({ report, onClose, onStartKautilya }: ReportDetailsM
                       </div>
                       <div>
                         <span className="font-medium text-gray-600">Status:</span>
-                        <Badge className={getStatusColor(report.status)} className="ml-2">
+                        <Badge className={getStatusColor(report.status)}>
                           {report.status.toUpperCase()}
                         </Badge>
                       </div>

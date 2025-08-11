@@ -1,0 +1,132 @@
+TRIAGE & DEPLOY – LEA Dashboard Engagement
+What Happens:
+When Priya’s complaint enters the system, the officer sees:
+
+Phone number
+
+Scam type
+
+Location (auto-mapped from IP/GPS)
+
+History of this number in the system
+
+System Auto-Checks:
+
+Is this number already part of an ongoing Kautilya sting?
+
+If YES → Links the new report to existing operation.
+
+If NO → Officer can click "Deploy Kautilya 2.0" to start a new sting.
+
+Officer Dashboard View:
+
+Complaint Timeline → shows every action since the report.
+
+Previous Cases Section → history of linked frauds.
+
+"Start Hunt" Button → launches MayaJaal + Kautilya engagement mode.
+
+Step 3: ENGAGE – MayaJaal + Kautilya 2.0
+What Happens:
+The system generates a fake digital persona to talk to the scammer.
+Example: "Shalini, Army wife from Indore, looking to buy equipment."
+
+Engagement Process:
+
+Kautilya sends human-like chat messages with random typing delays (simulated via JavaScript timers).
+
+The AI attempts to extract:
+
+UPI IDs
+
+Bank account numbers
+
+Fake invoice links
+
+MayaJaal adds story consistency so the scammer believes the victim is real.
+
+Tech Side:
+
+WebSocket for live officer viewing of the chat.
+
+Officer can manually send messages or let AI auto-handle.
+
+All messages logged for evidence.
+
+Step 4: EXTRACT & ANALYZE – Scammer DNA Fingerprinting
+What Happens:
+Once scammer sends fauji47@okbank, the system:
+
+Secures UPI ID → Encrypt + Save in fraud database.
+
+Runs Scammer DNA Engine:
+
+Searches historical records
+
+Maps all virtual numbers, emails, and IP addresses linked to this UPI.
+
+Detects patterns → same UPI linked to 3 electricity bill scams in past.
+
+Dashboard Updates:
+
+Scam Network Map → visualization of scam ring.
+
+Case Heatmap → shows scam density across Indore.
+
+Suspect Profile Card → quick facts about scammer.
+
+Step 5: AUTHORIZE – Vajra (The Hammer)
+What Happens:
+Once UPI ID & scam network are confirmed, the dashboard shows:
+
+"HUNT SUCCESSFUL – UPI ID EXTRACTED – MATCHED WITH 3 SCAMS"
+
+Officer sees a Big Red Button:
+
+“Authorize Vajra: Scorched Earth Protocol”
+
+Security Check:
+
+Officer must GovCert Login + 2FA OTP + Officer ID confirmation before triggering.
+
+Step 6: STRIKE & SECURE – Vajra + Akhanda
+What Happens:
+
+Vajra sends mock takedown requests to payment gateway to freeze:
+
+fauji47@okbank
+
+All linked accounts from Scammer DNA analysis
+
+Akhanda logs every step in immutable blockchain ledger:
+
+Complaint received
+
+Hunt initiated
+
+UPI extracted
+
+DNA matched
+
+Officer authorization
+
+Takedown confirmed
+
+Ledger View in UI:
+
+Step-by-step log with hash + previous hash (blockchain chain view).
+
+Officer & judge can click any log entry to see exact evidence.
+
+🔁 Live Simulation Loop (for Hackathon Demo)
+To make this look alive during your presentation:
+
+Every 3 minutes → new fake complaint auto-injected.
+
+Complaint details look real (phone, UPI, chat screenshots).
+
+Dashboard graphs update instantly → "Scam Trends" & "Heatmap" change.
+
+Judges can click a report and watch Kautilya engage the scammer live.
+
+add this features in my officer panel to solve this user reports

@@ -19,7 +19,16 @@ import {
   TrendingUp,
   Activity,
   LogOut,
-  Bell
+  Bell,
+  AlertCircle,
+  Database,
+  UserCheck,
+  User,
+  History,
+  Share2,
+  CreditCard,
+  Target,
+  Search
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -59,18 +68,140 @@ export function OfficerDashboard({ officer, onLogout, onStartKautilya }: Officer
   const [selectedReport, setSelectedReport] = useState<ScamReport | null>(null);
   const [activeTab, setActiveTab] = useState("reports");
   const [notifications, setNotifications] = useState<number>(0);
-
-  // Fetch all scam reports
-  const { data: reports = [], refetch: refetchReports, isLoading } = useQuery<ScamReport[]>({
-    queryKey: ["/api/scam-reports"],
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  const [liveReports, setLiveReports] = useState<ScamReport[]>([]);
+  const [realtimeStats, setRealtimeStats] = useState({
+    todayReports: 0,
+    activeOperations: 0,
+    successfulTakedowns: 0
   });
 
-  // Simulate live notifications
+  // Fetch all scam reports with more frequent updates for live demo
+  const { data: reports = [], refetch: refetchReports, isLoading } = useQuery<ScamReport[]>({
+    queryKey: ["/api/scam-reports"],
+    refetchInterval: 5000, // More frequent updates for live engagement
+  });
+
+  // Enhanced live notification system - simulates real complaints coming in
+  useEffect(() => {
+    const generateLiveComplaint = () => {
+      const demoComplaints = [
+        {
+          id: Date.now().toString(),
+          reporterName: "Priya Sharma",
+          reporterContact: "+91-9876543210",
+          reporterEmail: "priya.sharma@email.com",
+          scamType: "Army Equipment Scam",
+          description: "Received WhatsApp message about discounted army surplus equipment. Scammer claiming to be Army officer selling equipment cheap. Asked to pay ₹15,000 advance through UPI.",
+          amount: 15000,
+          location: "Vijay Nagar, Indore",
+          suspiciousNumbers: ["+91-8765432109"],
+          suspiciousUPIs: ["fauji47@okbank"],
+          status: "new",
+          riskLevel: "high",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          id: (Date.now() + 1).toString(),
+          reporterName: "Sunita Jain", 
+          reporterContact: "+91-7654321098",
+          reporterEmail: "sunita.jain@email.com",
+          scamType: "Loan Fraud",
+          description: "Got call about instant personal loan approval without documents. Caller asked for processing fee payment of ₹5,000 via UPI before loan disbursement.",
+          amount: 5000,
+          location: "Palasia, Indore",
+          suspiciousNumbers: ["+91-6543210987"],
+          suspiciousUPIs: ["quickloan123@phonepe"],
+          status: "new",
+          riskLevel: "medium", 
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        {
+          id: (Date.now() + 2).toString(),
+          reporterName: "Rajesh Patel",
+          reporterContact: "+91-9988776655",
+          reporterEmail: "rajesh.patel@email.com",
+          scamType: "Job Fraud",
+          description: "Fake government job posting on WhatsApp demanding registration fee and documents. Promised Railway TC job in exchange for ₹8,000 processing fee.",
+          amount: 8000,
+          location: "MG Road, Indore",
+          suspiciousNumbers: ["+91-7766554433"],
+          suspiciousUPIs: ["govt_jobs@gpay"],
+          status: "new", 
+          riskLevel: "high",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ];
+
+      const randomComplaint = demoComplaints[Math.floor(Math.random() * demoComplaints.length)];
+      randomComplaint.id = Date.now().toString();
+      randomComplaint.createdAt = new Date();
+      
+      setLiveReports(prev => [randomComplaint, ...prev.slice(0, 4)]); // Keep only last 5
+      setNotifications(prev => prev + 1);
+      setRealtimeStats(prev => ({
+        ...prev,
+        todayReports: prev.todayReports + 1
+      }));
+
+      // Show enhanced notification toast with action buttons
+      const notification = document.createElement('div');
+      notification.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-600 to-red-700 text-white p-4 rounded-xl shadow-2xl z-50 border border-red-500 max-w-sm';
+      notification.innerHTML = `
+        <div class="flex items-start gap-3">
+          <div class="w-3 h-3 bg-white rounded-full animate-ping mt-1"></div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <strong class="text-sm">🚨 NEW COMPLAINT</strong>
+              <span class="bg-white/20 px-2 py-0.5 rounded text-xs">${randomComplaint.riskLevel.toUpperCase()}</span>
+            </div>
+            <div class="text-sm font-medium">${randomComplaint.reporterName}</div>
+            <div class="text-xs text-red-100 mt-1">${randomComplaint.scamType} - ₹${randomComplaint.amount?.toLocaleString()}</div>
+            <div class="text-xs text-red-200 mt-1">${randomComplaint.location}</div>
+            <div class="flex gap-2 mt-2">
+              <button class="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs transition-colors" onclick="this.parentElement.parentElement.parentElement.parentElement.remove()">View</button>
+              <button class="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs transition-colors" onclick="this.parentElement.parentElement.parentElement.parentElement.remove()">Deploy Kautilya</button>
+            </div>
+          </div>
+          <button onclick="this.parentElement.parentElement.remove()" class="text-white/70 hover:text-white text-lg leading-none">&times;</button>
+        </div>
+      `;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 8000);
+
+      // Trigger reports refetch
+      refetchReports();
+    };
+
+    // Generate first complaint after 10 seconds
+    const initialTimeout = setTimeout(generateLiveComplaint, 10000);
+    
+    // Then generate complaints every 3 minutes for live demo
+    const interval = setInterval(generateLiveComplaint, 180000); // 3 minutes
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [refetchReports]);
+
+  // Update realtime stats periodically for dashboard
   useEffect(() => {
     const interval = setInterval(() => {
-      setNotifications(prev => prev + Math.floor(Math.random() * 2));
-    }, 45000);
+      setRealtimeStats(prev => ({
+        todayReports: prev.todayReports + Math.floor(Math.random() * 2), // 0-1 new reports
+        activeOperations: Math.floor(Math.random() * 8) + 2, // 2-9 active ops
+        successfulTakedowns: prev.successfulTakedowns + (Math.random() > 0.8 ? 1 : 0) // Occasional takedown
+      }));
+    }, 45000); // Update every 45 seconds
+
     return () => clearInterval(interval);
   }, []);
 
@@ -105,9 +236,41 @@ export function OfficerDashboard({ officer, onLogout, onStartKautilya }: Officer
   };
 
   const startKautilyaOperation = (report: ScamReport) => {
-    // This will be implemented in the next step
-    console.log('Starting Kautilya 2.0 operation for report:', report.id);
-    alert(`Starting Kautilya 2.0 engagement for case: ${report.id.slice(0, 8)}...`);
+    // Check if number is already part of ongoing operation
+    const existingOperation = checkExistingOperation(report);
+    
+    if (existingOperation) {
+      alert(`⚠️ LINKED OPERATION DETECTED\n\nThis number is already part of operation: ${existingOperation}\n\nLinking new report to existing Kautilya sting...`);
+      // Auto-link to existing operation
+      setTimeout(() => {
+        setSelectedReport(report);
+        setActiveTab("timeline");
+      }, 2000);
+    } else {
+      // Start new Kautilya 2.0 operation
+      console.log('🎯 Starting NEW Kautilya 2.0 operation for report:', report.id);
+      
+      // Show operation confirmation
+      const confirmStart = confirm(`🚀 DEPLOY KAUTILYA 2.0?\n\nTarget: ${report.suspiciousNumbers[0]}\nScam Type: ${report.scamType}\nLocation: ${report.location}\n\nThis will initiate AI engagement with MayaJaal persona. Continue?`);
+      
+      if (confirmStart) {
+        // Call the parent function to start Kautilya engagement
+        onStartKautilya(report);
+      }
+    }
+  };
+
+  const checkExistingOperation = (report: ScamReport) => {
+    // Simulate checking for existing operations
+    const targetNumber = report.suspiciousNumbers[0];
+    if (targetNumber && Math.random() > 0.7) {
+      return `KAU-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+    }
+    return null;
+  };
+
+  const deployKautilya = (report: ScamReport) => {
+    startKautilyaOperation(report);
   };
 
   return (
@@ -126,11 +289,29 @@ export function OfficerDashboard({ officer, onLogout, onStartKautilya }: Officer
           </div>
           
           <div className="flex items-center gap-4">
+            {/* Live Stats Ticker */}
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-600">Today: {realtimeStats.todayReports + reports.filter(r => 
+                  new Date(r.createdAt).toDateString() === new Date().toDateString()
+                ).length}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-600">Active Ops: {realtimeStats.activeOperations}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-600">Takedowns: {realtimeStats.successfulTakedowns}</span>
+              </div>
+            </div>
+            
             <div className="relative">
               <Button variant="outline" size="sm" className="relative">
                 <Bell className="w-4 h-4" />
                 {notifications > 0 && (
-                  <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center animate-bounce">
                     <span className="text-xs text-white">{notifications}</span>
                   </div>
                 )}
@@ -444,6 +625,53 @@ interface ReportDetailsModalProps {
 }
 
 function ReportDetailsModal({ report, onClose, onStartKautilya }: ReportDetailsModalProps) {
+  const [activeTab, setActiveTab] = useState('overview');
+
+  const checkExistingOperation = (report: ScamReport) => {
+    const targetNumber = report.suspiciousNumbers[0];
+    if (targetNumber && Math.random() > 0.6) {
+      return `KAU-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+    }
+    return null;
+  };
+
+  const deployKautilya = (report: ScamReport) => {
+    const existingOperation = checkExistingOperation(report);
+    
+    if (existingOperation) {
+      alert(`⚠️ LINKED OPERATION DETECTED\n\nThis number is already part of operation: ${existingOperation}\n\nLinking new report to existing Kautilya sting...`);
+      setTimeout(() => {
+        setActiveTab("timeline");
+      }, 2000);
+    } else {
+      const confirmStart = confirm(`🚀 DEPLOY KAUTILYA 2.0?\n\nTarget: ${report.suspiciousNumbers[0] || report.reporterContact}\nScam Type: ${report.scamType}\nLocation: ${report.location}\n\nThis will initiate AI engagement with MayaJaal persona. Continue?`);
+      
+      if (confirmStart) {
+        onStartKautilya(report);
+        onClose();
+      }
+    }
+  };
+
+  const getRiskColor = (risk: string) => {
+    switch (risk) {
+      case 'high': return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'new': return 'bg-red-100 text-red-800';
+      case 'assigned': return 'bg-yellow-100 text-yellow-800';
+      case 'investigating': return 'bg-blue-100 text-blue-800';
+      case 'resolved': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -456,132 +684,311 @@ function ReportDetailsModal({ report, onClose, onStartKautilya }: ReportDetailsM
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-xl max-w-6xl w-full max-h-[95vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Case Details</h2>
-            <Button variant="outline" onClick={onClose}>
-              <XCircle className="w-4 h-4" />
-            </Button>
+          {/* Enhanced Header */}
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">TRIAGE & DEPLOY - LEA Dashboard</h2>
+                <p className="text-sm text-gray-600">Cybercrime Investigation Interface</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge className={getRiskColor(report.riskLevel)} className="px-3 py-1">
+                {report.riskLevel.toUpperCase()} RISK
+              </Badge>
+              <Button variant="outline" onClick={onClose}>
+                <XCircle className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          {/* Complaint Overview Section */}
+          <Card className="mb-6 border-2 border-red-200 bg-red-50/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-red-800">🚨 Priya's Complaint Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Case ID</label>
-                  <p className="font-mono text-sm bg-gray-100 p-2 rounded">{report.id}</p>
+                  <span className="text-sm font-medium text-gray-600">Phone Number:</span>
+                  <p className="font-mono font-bold text-lg">{report.suspiciousNumbers[0] || report.reporterContact}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Scam Type</label>
-                  <p>{report.scamType}</p>
+                  <span className="text-sm font-medium text-gray-600">Scam Type:</span>
+                  <p className="font-semibold">{report.scamType}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Reporter</label>
-                  <p>{report.reporterName} ({report.reporterContact})</p>
+                  <span className="text-sm font-medium text-gray-600">Location (Auto-mapped from IP/GPS):</span>
+                  <p className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4 text-green-600" />
+                    {report.location}
+                  </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">Location</label>
-                  <p>{report.location || 'Not specified'}</p>
+                  <span className="text-sm font-medium text-gray-600">Amount Lost:</span>
+                  <p className="text-red-600 font-bold text-lg">₹{report.amount?.toLocaleString()}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-600">Amount</label>
-                  <p>{report.amount ? `₹${report.amount.toLocaleString()}` : 'Not specified'}</p>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Description and Evidence */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Case Description</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm leading-relaxed">{report.description}</p>
-              </CardContent>
-            </Card>
-
-            {/* Suspicious Identifiers */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Suspicious Identifiers</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {report.suspiciousNumbers.length > 0 && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">Phone Numbers</label>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {report.suspiciousNumbers.map((number, idx) => (
-                        <Badge key={idx} variant="destructive">{number}</Badge>
-                      ))}
-                    </div>
+              {/* System Auto-Checks */}
+              <div className="border-l-4 border-blue-500 pl-4 py-3 bg-blue-50 rounded-r-lg mb-4">
+                <h4 className="font-semibold text-blue-800 mb-2">🔍 System Auto-Checks:</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    {checkExistingOperation(report) ? (
+                      <>
+                        <AlertCircle className="w-4 h-4 text-orange-500" />
+                        <span>⚠️ Number found in ongoing Kautilya operation: {checkExistingOperation(report)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        <span>✅ No existing operations found. Ready for new deployment.</span>
+                      </>
+                    )}
                   </div>
-                )}
-                {report.suspiciousUPIs.length > 0 && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-600">UPI IDs</label>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {report.suspiciousUPIs.map((upi, idx) => (
-                        <Badge key={idx} variant="destructive">{upi}</Badge>
-                      ))}
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Database className="w-4 h-4 text-blue-500" />
+                    <span>History: {Math.floor(Math.random() * 5) + 1} previous reports from this region</span>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
+              </div>
 
-            {/* AI Analysis */}
-            {report.aiAnalysis && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>AI Analysis</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Risk Score</span>
-                      <Badge className={`${report.riskLevel === 'high' ? 'bg-red-100 text-red-800' : 
-                        report.riskLevel === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
-                        'bg-green-100 text-green-800'}`}>
-                        {report.riskLevel}
-                      </Badge>
-                    </div>
-                    {report.aiAnalysis.recommendations && (
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button 
+                  onClick={() => deployKautilya(report)} 
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg flex items-center gap-2 flex-1"
+                >
+                  <Zap className="w-5 h-5" />
+                  🚀 START HUNT - Deploy Kautilya 2.0
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="border-blue-500 text-blue-600 hover:bg-blue-50 py-3 px-4"
+                  onClick={() => setActiveTab("timeline")}
+                >
+                  <Clock className="w-4 h-4 mr-2" />
+                  Timeline
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Officer Dashboard View Tabs */}
+          <div className="border-b border-gray-200 mb-6">
+            <nav className="-mb-px flex space-x-8">
+              {[
+                { id: 'overview', label: 'Case Overview', icon: FileText },
+                { id: 'timeline', label: 'Complaint Timeline', icon: Clock },
+                { id: 'previous', label: 'Previous Cases', icon: History },
+                { id: 'network', label: 'Scam Network Map', icon: Share2 }
+              ].map((tab) => {
+                const IconComponent = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${
+                      activeTab === tab.id
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Tab Content */}
+          <Card>
+            <CardContent className="pt-6">
+              {activeTab === 'overview' && (
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="font-semibold text-xl mb-3">{report.scamType}</h3>
+                    <p className="text-gray-700 leading-relaxed">{report.description}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
                       <div>
-                        <span className="text-sm font-medium">Recommendations</span>
-                        <p className="text-sm text-gray-600 mt-1">{report.aiAnalysis.recommendations}</p>
+                        <span className="font-medium text-gray-600">Reporter:</span>
+                        <p className="font-medium">{report.reporterName}</p>
+                        <p className="text-gray-500">{report.reporterContact}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-600">Status:</span>
+                        <Badge className={getStatusColor(report.status)} className="ml-2">
+                          {report.status.toUpperCase()}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {report.suspiciousUPIs.length > 0 && (
+                      <div>
+                        <span className="font-medium text-gray-600">Target UPI IDs:</span>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {report.suspiciousUPIs.map((upi, idx) => (
+                            <Badge key={idx} variant="outline" className="font-mono text-red-600 bg-red-50 border-red-200">
+                              🎯 {upi}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+                </div>
+              )}
 
-          {/* Action Buttons */}
-          <div className="flex gap-4 mt-6 pt-6 border-t">
-            <Button 
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => onStartKautilya(report)}
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Deploy Kautilya 2.0
-            </Button>
-            <Button variant="outline">
-              <Users className="w-4 h-4 mr-2" />
-              Assign to Me
-            </Button>
-            <Button variant="outline">
-              <FileText className="w-4 h-4 mr-2" />
-              Generate Report
-            </Button>
-          </div>
+              {activeTab === 'timeline' && (
+                <div className="space-y-6">
+                  <h3 className="font-semibold text-xl">Complaint Timeline - Every Action Since Report</h3>
+                  <div className="space-y-4">
+                    {[
+                      { time: 'Just now', action: `Case opened in officer dashboard by Officer ${report.assignedOfficer || 'IND001'}`, status: 'current', icon: UserCheck },
+                      { time: '1 min ago', action: 'AI triage completed - High risk scam pattern detected', status: 'completed', icon: AlertTriangle },
+                      { time: '3 min ago', action: 'Complaint received via Prahaar Kavach portal', status: 'completed', icon: FileText },
+                      { time: '5 min ago', action: `Initial complaint submitted by ${report.reporterName}`, status: 'completed', icon: User },
+                    ].map((event, idx) => {
+                      const IconComponent = event.icon;
+                      return (
+                        <div key={idx} className={`flex items-start gap-4 p-4 rounded-lg border ${
+                          event.status === 'current' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'
+                        }`}>
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            event.status === 'current' ? 'bg-blue-600 text-white' : 'bg-gray-400 text-white'
+                          }`}>
+                            <IconComponent className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{event.action}</p>
+                            <p className="text-sm text-gray-500">{event.time}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <h4 className="font-semibold text-yellow-800 mb-2">⚡ Next Steps:</h4>
+                    <p className="text-sm text-yellow-700">Deploy Kautilya 2.0 for AI engagement with scammer to extract UPI IDs and build scammer DNA profile for network analysis.</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'previous' && (
+                <div className="space-y-6">
+                  <h3 className="font-semibold text-xl">Previous Cases Section - History of Linked Frauds</h3>
+                  <div className="space-y-4">
+                    {[
+                      { id: 'CASE-001', type: 'Army Equipment Scam', amount: 12000, date: '2024-01-10', status: 'resolved', similarity: 85, reporter: 'Ramesh Kumar' },
+                      { id: 'CASE-078', type: 'Army Surplus Sale', amount: 8000, date: '2024-01-05', status: 'investigating', similarity: 72, reporter: 'Sunita Sharma' },
+                      { id: 'CASE-156', type: 'Military Equipment', amount: 15000, date: '2023-12-28', status: 'resolved', similarity: 90, reporter: 'Vikash Patel' }
+                    ].map((case_, idx) => (
+                      <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="font-semibold text-lg">{case_.id}</span>
+                              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                {case_.similarity}% Pattern Match
+                              </Badge>
+                              <Badge className={getStatusColor(case_.status)}>
+                                {case_.status}
+                              </Badge>
+                            </div>
+                            <p className="text-gray-700 font-medium">{case_.type} - ₹{case_.amount.toLocaleString()}</p>
+                            <p className="text-sm text-gray-500">Reporter: {case_.reporter} | Date: {case_.date}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <h4 className="font-semibold text-red-800 mb-2">🎯 Pattern Analysis:</h4>
+                    <p className="text-sm text-red-700">
+                      <strong>MO Detected:</strong> Same operational pattern - Army equipment sales with advance payment demands via UPI. 
+                      All cases target military enthusiasts with promises of discounted surplus equipment.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'network' && (
+                <div className="space-y-6">
+                  <h3 className="font-semibold text-xl">Scam Network Map - Linked Criminal Infrastructure</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-gray-700">Connected Phone Numbers:</h4>
+                      {[
+                        { number: '+91-8765432109', reports: 3, status: 'active' },
+                        { number: '+91-7654321098', reports: 2, status: 'blocked' },
+                        { number: '+91-9876543210', reports: 1, status: 'investigating' }
+                      ].map((entry, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-4 h-4 text-gray-500" />
+                            <span className="font-mono text-sm">{entry.number}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {entry.reports} reports
+                            </Badge>
+                            <Badge className={entry.status === 'active' ? 'bg-red-100 text-red-800' : 
+                              entry.status === 'blocked' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800'}>
+                              {entry.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-gray-700">Linked UPI Infrastructure:</h4>
+                      {[
+                        { upi: 'fauji47@okbank', risk: 'HIGH', amount: '₹45,000' },
+                        { upi: 'army_surplus@paytm', risk: 'HIGH', amount: '₹32,000' },
+                        { upi: 'soldier123@phonepe', risk: 'MEDIUM', amount: '₹18,000' }
+                      ].map((entry, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-red-500" />
+                            <span className="font-mono text-sm">{entry.upi}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-600">{entry.amount}</span>
+                            <Badge className="bg-red-100 text-red-800 text-xs">{entry.risk} RISK</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h4 className="font-semibold text-blue-800 mb-3">🧠 Network Intelligence Summary:</h4>
+                    <ul className="text-sm text-blue-700 space-y-2">
+                      <li>• <strong>Geographic Focus:</strong> Operates primarily in Indore and surrounding MP districts</li>
+                      <li>• <strong>Target Profile:</strong> Middle-aged individuals interested in army surplus equipment</li>
+                      <li>• <strong>Payment Range:</strong> Demands advance payments between ₹5,000 to ₹20,000</li>
+                      <li>• <strong>Communication:</strong> Uses military terminology and ranks to establish credibility</li>
+                      <li>• <strong>Network Size:</strong> Estimated 8-12 active phone numbers in rotation</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </motion.div>
     </motion.div>

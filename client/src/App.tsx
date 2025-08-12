@@ -21,6 +21,14 @@ import Support from "@/pages/support";
 import UserGuide from "@/pages/user-guide";
 import TrainingVideos from "@/pages/training-videos";
 import FAQ from "@/pages/faq";
+import PrivacyPolicy from "@/pages/legal/privacy-policy";
+import TermsOfService from "@/pages/legal/terms-of-service";
+import CybercrimePreventionPage from "@/pages/resources/cybercrime-prevention";
+import SecurityTips from "@/pages/resources/security-tips";
+import AwarenessPrograms from "@/pages/resources/awareness-programs";
+import HelpCenter from "@/pages/help-center";
+import ReportBug from "@/pages/report-bug";
+import DataProtection from "@/pages/legal/data-protection";
 import NotFound from "@/pages/not-found";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,6 +51,14 @@ function Router() {
       <Route path="/user-guide" component={UserGuide} />
       <Route path="/training-videos" component={TrainingVideos} />
       <Route path="/faq" component={FAQ} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/cybercrime-prevention" component={CybercrimePreventionPage} />
+      <Route path="/security-tips" component={SecurityTips} />
+      <Route path="/awareness-programs" component={AwarenessPrograms} />
+      <Route path="/help-center" component={HelpCenter} />
+      <Route path="/report-bug" component={ReportBug} />
+      <Route path="/data-protection" component={DataProtection} />
       <Route component={NotFound} />
     </Switch>
   );

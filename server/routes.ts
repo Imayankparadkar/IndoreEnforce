@@ -483,7 +483,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Message is required" });
       }
 
+      console.log('Processing chat message:', message, 'Language:', language);
       const response = await generateChatResponse(message, language || 'en');
+      console.log('Generated response:', response);
       res.json({ response });
     } catch (error) {
       console.error('Chat API Error:', error);
@@ -491,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fallback = lang === 'hi' 
         ? "क्षमा करें, मैं अभी उपलब्ध नहीं हूँ। कृपया बाद में प्रयास करें।"
         : "Sorry, I'm not available right now. Please try again later.";
-      res.json({ fallback });
+      res.status(500).json({ error: "Chat failed", response: fallback });
     }
   });
 

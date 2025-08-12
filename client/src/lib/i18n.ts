@@ -69,7 +69,19 @@ const resources = {
       "contactUs": "Contact Us",
       "privacyPolicy": "Privacy Policy",
       "termsOfService": "Terms of Service",
-      "helpCenter": "Help Center"
+      "helpCenter": "Help Center",
+      
+      // Additional Navigation
+      "officerPortal": "Officer Portal",
+      "support": "Support",
+      "userGuide": "User Guide",
+      "trainingVideos": "Training Videos",
+      "faq": "FAQ",
+      "notifications": "Notifications",
+      
+      // Support Page
+      "welcomeToPrahaar": "Welcome to Prahaar 360",
+      "cyberSafetyForIndore": "Your gateway to cyber safety and security for Indore"
     }
   },
   hi: {
@@ -138,7 +150,19 @@ const resources = {
       "contactUs": "संपर्क करें",
       "privacyPolicy": "गोपनीयता नीति",
       "termsOfService": "सेवा की शर्तें",
-      "helpCenter": "सहायता केंद्र"
+      "helpCenter": "सहायता केंद्र",
+      
+      // Additional Navigation
+      "officerPortal": "अधिकारी पोर्टल",
+      "support": "सहायता",
+      "userGuide": "उपयोगकर्ता गाइड",
+      "trainingVideos": "प्रशिक्षण वीडियो",
+      "faq": "सामान्य प्रश्न",
+      "notifications": "सूचनाएं",
+      
+      // Support Page
+      "welcomeToPrahaar": "प्रहार 360 में आपका स्वागत है",
+      "cyberSafetyForIndore": "इंदौर के लिए साइबर सुरक्षा और सुरक्षा का आपका प्रवेश द्वार"
     }
   }
 };

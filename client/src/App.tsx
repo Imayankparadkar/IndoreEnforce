@@ -17,6 +17,10 @@ import Kautilya from "@/pages/kautilya";
 import MayaJaal from "@/pages/mayajaal";
 import BrahmaNet from "@/pages/brahmanet";
 import Officer from "@/pages/officer";
+import Support from "@/pages/support";
+import UserGuide from "@/pages/user-guide";
+import TrainingVideos from "@/pages/training-videos";
+import FAQ from "@/pages/faq";
 import NotFound from "@/pages/not-found";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +39,10 @@ function Router() {
       <Route path="/mayajaal" component={MayaJaal} />
       <Route path="/brahmanet" component={BrahmaNet} />
       <Route path="/officer" component={Officer} />
+      <Route path="/support" component={Support} />
+      <Route path="/user-guide" component={UserGuide} />
+      <Route path="/training-videos" component={TrainingVideos} />
+      <Route path="/faq" component={FAQ} />
       <Route component={NotFound} />
     </Switch>
   );

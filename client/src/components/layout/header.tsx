@@ -9,6 +9,7 @@ import { useLanguage } from "../../contexts/LanguageContext";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { LoginModal } from "../auth/LoginModal";
 import { GoogleTranslate } from "./GoogleTranslate";
+import { NotificationSystem } from "../notifications/notification-system";
 import { Link } from "wouter";
 
 export default function Header() {
@@ -88,39 +89,8 @@ export default function Header() {
                 </Button>
               </Link>
               
-              {/* Notifications */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="relative hover:bg-blue-50">
-                    <Bell className="h-5 w-5" />
-                    <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 min-w-[1.2rem] h-5">
-                      3
-                    </Badge>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80">
-                  <div className="p-4">
-                    <h3 className="font-semibold text-sm text-gray-900 mb-2">{t('notifications')}</h3>
-                    <div className="space-y-2">
-                      <div className="p-2 bg-red-50 rounded border border-red-200">
-                        <p className="text-xs text-red-800 font-medium">High Priority Alert</p>
-                        <p className="text-xs text-red-600">New financial fraud case reported in Vijay Nagar</p>
-                        <p className="text-xs text-gray-500">2 minutes ago</p>
-                      </div>
-                      <div className="p-2 bg-yellow-50 rounded border border-yellow-200">
-                        <p className="text-xs text-yellow-800 font-medium">Medium Priority</p>
-                        <p className="text-xs text-yellow-700">Suspicious UPI activity detected</p>
-                        <p className="text-xs text-gray-500">15 minutes ago</p>
-                      </div>
-                      <div className="p-2 bg-blue-50 rounded border border-blue-200">
-                        <p className="text-xs text-blue-800 font-medium">Information</p>
-                        <p className="text-xs text-blue-700">Weekly cybercrime report ready</p>
-                        <p className="text-xs text-gray-500">1 hour ago</p>
-                      </div>
-                    </div>
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* Real-time Notifications */}
+              <NotificationSystem />
               
               {/* User Menu */}
               {currentUser ? (

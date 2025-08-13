@@ -295,22 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/gemini/chat", async (req, res) => {
-    try {
-      const { message, language } = req.body;
-      const response = await generateChatResponse(message, language);
-      res.json({ response });
-    } catch (error) {
-      console.error("Chatbot error:", error);
-      const { language } = req.body;
-      res.status(500).json({ 
-        error: "Chatbot unavailable",
-        fallback: language === 'hi' 
-          ? "क्षमा करें, मैं अभी उपलब्ध नहीं हूँ। कृपया बाद में प्रयास करें।"
-          : "Sorry, I'm not available right now. Please try again later."
-      });
-    }
-  });
+
 
   app.post("/api/gemini/investigate", async (req, res) => {
     try {

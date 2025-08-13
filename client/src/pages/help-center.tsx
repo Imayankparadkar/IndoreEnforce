@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -227,21 +228,22 @@ export default function HelpCenter() {
               {quickActions.map((action, index) => {
                 const IconComponent = action.icon;
                 return (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="h-auto p-4 justify-start hover:shadow-lg transition-all"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 bg-${action.color}-100 rounded-lg flex items-center justify-center`}>
-                        <IconComponent className={`w-5 h-5 text-${action.color}-600`} />
+                  <Link key={index} href={action.link}>
+                    <Button
+                      variant="outline"
+                      className="h-auto p-4 justify-start hover:shadow-lg transition-all w-full"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 bg-${action.color}-100 rounded-lg flex items-center justify-center`}>
+                          <IconComponent className={`w-5 h-5 text-${action.color}-600`} />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-semibold">{action.title}</div>
+                          <div className="text-sm text-gray-600">{action.description}</div>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <div className="font-semibold">{action.title}</div>
-                        <div className="text-sm text-gray-600">{action.description}</div>
-                      </div>
-                    </div>
-                  </Button>
+                    </Button>
+                  </Link>
                 );
               })}
             </div>

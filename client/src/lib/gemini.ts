@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 // Use server-side API for security
-const API_BASE = import.meta.env.DEV ? 'http://localhost:5000' : '';
+const API_BASE = import.meta.env.DEV ? '' : '';
 
 async function callGeminiAPI(endpoint: string, data: any) {
   try {

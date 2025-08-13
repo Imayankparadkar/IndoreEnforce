@@ -26,6 +26,8 @@ import TermsOfService from "@/pages/legal/terms-of-service";
 import CybercrimePreventionPage from "@/pages/resources/cybercrime-prevention";
 import SecurityTips from "@/pages/resources/security-tips";
 import AwarenessPrograms from "@/pages/resources/awareness-programs";
+import IncidentResponse from "@/pages/resources/incident-response";
+import Downloads from "@/pages/resources/downloads";
 import HelpCenter from "@/pages/help-center";
 import ReportBug from "@/pages/report-bug";
 import DataProtection from "@/pages/legal/data-protection";
@@ -56,6 +58,8 @@ function Router() {
       <Route path="/cybercrime-prevention" component={CybercrimePreventionPage} />
       <Route path="/security-tips" component={SecurityTips} />
       <Route path="/awareness-programs" component={AwarenessPrograms} />
+      <Route path="/incident-response" component={IncidentResponse} />
+      <Route path="/downloads" component={Downloads} />
       <Route path="/help-center" component={HelpCenter} />
       <Route path="/report-bug" component={ReportBug} />
       <Route path="/data-protection" component={DataProtection} />

@@ -31,25 +31,47 @@ export default function Header() {
     }
   };
 
-  // Mock data for search results - in real app, this would come from API
-  const mockSearchData = [
-    { id: 1, title: "UPI Scam Report - Vijay Nagar", type: "report", category: "Financial Fraud", link: "/cases/1" },
-    { id: 2, title: "Voice Call Scam - Palasia", type: "report", category: "Voice Scam", link: "/cases/2" },
-    { id: 3, title: "VAJRA Threat Map", type: "feature", category: "Tools", link: "/vajra" },
-    { id: 4, title: "KAUTILYA AI Assistant", type: "feature", category: "Tools", link: "/kautilya" },
-    { id: 5, title: "Help Center", type: "page", category: "Support", link: "/help-center" },
-    { id: 6, title: "Training Videos", type: "page", category: "Resources", link: "/training-videos" },
-    { id: 7, title: "Cyber Crime Prevention Tips", type: "resource", category: "Education", link: "/cybercrime-prevention" },
+  // Search data for all pages and features
+  const searchData = [
+    // Core Features
+    { id: 1, title: "VAJRA Threat Map", type: "feature", category: "Security Tools", link: "/vajra", description: "Real-time threat mapping and police notifications" },
+    { id: 2, title: "KAUTILYA AI Assistant", type: "feature", category: "AI Tools", link: "/kautilya", description: "AI-powered investigation assistance" },
+    { id: 3, title: "MAYAJAAL Web Intelligence", type: "feature", category: "Intelligence", link: "/mayajaal", description: "Web intelligence and digital footprint analysis" },
+    { id: 4, title: "BRAHMANET Network Analysis", type: "feature", category: "Network Tools", link: "/brahmanet", description: "Citizen engagement and reporting portal" },
+    
+    // Main Pages
+    { id: 5, title: "Dashboard", type: "page", category: "Main", link: "/", description: "Central control and analytics dashboard" },
+    { id: 6, title: "Officer Portal", type: "page", category: "Officer Tools", link: "/officer", description: "Law enforcement officer interface" },
+    
+    // Support & Help Pages
+    { id: 7, title: "Help Center", type: "page", category: "Support", link: "/help-center", description: "Comprehensive help and support documentation" },
+    { id: 8, title: "User Guide", type: "page", category: "Support", link: "/user-guide", description: "Step-by-step user guide and tutorials" },
+    { id: 9, title: "Training Videos", type: "page", category: "Training", link: "/training-videos", description: "Video tutorials and training materials" },
+    { id: 10, title: "Report Bug", type: "page", category: "Support", link: "/report-bug", description: "Report technical issues and bugs" },
+    { id: 11, title: "FAQ", type: "page", category: "Support", link: "/faq", description: "Frequently asked questions" },
+    
+    // Legal & Policy Pages
+    { id: 12, title: "Privacy Policy", type: "page", category: "Legal", link: "/privacy-policy", description: "Privacy policy and data handling practices" },
+    { id: 13, title: "Terms of Service", type: "page", category: "Legal", link: "/terms-of-service", description: "Terms of service and usage conditions" },
+    { id: 14, title: "Data Protection", type: "page", category: "Legal", link: "/data-protection", description: "Data protection guidelines and compliance" },
+    
+    // Educational Resources
+    { id: 15, title: "Cybercrime Prevention", type: "resource", category: "Education", link: "/cybercrime-prevention", description: "Cybercrime prevention tips and best practices" },
+    { id: 16, title: "Security Tips", type: "resource", category: "Education", link: "/security-tips", description: "Digital security tips and guidelines" },
+    { id: 17, title: "Awareness Programs", type: "resource", category: "Education", link: "/awareness-programs", description: "Cybercrime awareness programs and initiatives" },
+    { id: 18, title: "Incident Response", type: "resource", category: "Emergency", link: "/incident-response", description: "Emergency incident response procedures" },
+    { id: 19, title: "Downloads", type: "resource", category: "Resources", link: "/downloads", description: "Downloadable resources and documents" },
   ];
 
   // Search functionality
   useEffect(() => {
-    if (searchTerm.length > 2) {
-      const filtered = mockSearchData.filter(item =>
+    if (searchTerm.length > 1) {
+      const filtered = searchData.filter(item =>
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchTerm.toLowerCase())
+        item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setSearchResults(filtered.slice(0, 5)); // Show max 5 results
+      setSearchResults(filtered.slice(0, 8)); // Show max 8 results
       setShowSearchResults(true);
     } else {
       setSearchResults([]);
@@ -70,10 +92,10 @@ export default function Header() {
 
   const getSearchIcon = (type: string) => {
     switch (type) {
-      case 'report': return <FileText className="w-4 h-4" />;
-      case 'feature': return <Shield className="w-4 h-4" />;
-      case 'page': return <Users className="w-4 h-4" />;
-      default: return <Search className="w-4 h-4" />;
+      case 'feature': return <Shield className="w-4 h-4 text-blue-600" />;
+      case 'page': return <FileText className="w-4 h-4 text-green-600" />;
+      case 'resource': return <AlertTriangle className="w-4 h-4 text-orange-600" />;
+      default: return <Search className="w-4 h-4 text-gray-600" />;
     }
   };
 
@@ -126,19 +148,20 @@ export default function Header() {
                       {searchResults.map((result) => (
                         <Link key={result.id} href={result.link}>
                           <div 
-                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
                             onClick={() => {
                               setShowSearchResults(false);
                               setSearchTerm("");
                             }}
                           >
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <div className="flex items-start gap-3">
+                              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
                                 {getSearchIcon(result.type)}
                               </div>
-                              <div>
-                                <div className="font-medium text-gray-900">{result.title}</div>
-                                <div className="text-sm text-gray-600">{result.category}</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-gray-900 truncate">{result.title}</div>
+                                <div className="text-sm text-gray-600 mb-1">{result.category}</div>
+                                <div className="text-xs text-gray-500 line-clamp-2">{result.description}</div>
                               </div>
                             </div>
                           </div>

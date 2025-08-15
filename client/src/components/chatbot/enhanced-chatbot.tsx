@@ -17,7 +17,9 @@ import {
   Phone,
   Shield,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Square,
+  ArrowDown
 } from "lucide-react";
 
 interface Message {
@@ -52,16 +54,35 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeechEnabled, setIsSpeechEnabled] = useState(true);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // Auto-scroll effect
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Monitor scroll position to show/hide scroll button
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+      setShowScrollButton(!isNearBottom);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -107,6 +128,10 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
     setInputValue('');
     setIsLoading(true);
 
+    // Create abort controller for this request
+    const controller = new AbortController();
+    setAbortController(controller);
+
     // Add typing indicator
     const typingMessage: Message = {
       id: 'typing',
@@ -120,6 +145,12 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
     try {
       const response = await generateChatResponse(inputValue, currentLanguage);
       
+      // Check if the request was aborted
+      if (controller.signal.aborted) {
+        setMessages(prev => prev.filter(m => m.id !== 'typing'));
+        return;
+      }
+
       // Remove typing indicator and add actual response
       setMessages(prev => {
         const filtered = prev.filter(m => m.id !== 'typing');
@@ -132,13 +163,18 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
       });
 
       // Text-to-speech for bot response
-      if (isSpeechEnabled && 'speechSynthesis' in window) {
+      if (isSpeechEnabled && 'speechSynthesis' in window && !controller.signal.aborted) {
         const utterance = new SpeechSynthesisUtterance(response);
         utterance.lang = currentLanguage === 'hi' ? 'hi-IN' : 'en-US';
         utterance.rate = 0.9;
         speechSynthesis.speak(utterance);
       }
     } catch (error) {
+      if (controller.signal.aborted) {
+        setMessages(prev => prev.filter(m => m.id !== 'typing'));
+        return;
+      }
+      
       console.error('Chat error:', error);
       setMessages(prev => {
         const filtered = prev.filter(m => m.id !== 'typing');
@@ -153,7 +189,24 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
       });
     } finally {
       setIsLoading(false);
+      setAbortController(null);
     }
+  };
+
+  const stopResponse = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+    
+    // Stop speech synthesis if active
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel();
+    }
+    
+    // Remove typing indicator
+    setMessages(prev => prev.filter(m => m.id !== 'typing'));
+    setIsLoading(false);
   };
 
   const startListening = () => {
@@ -243,9 +296,12 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
             </div>
           </CardHeader>
 
-          <CardContent className="flex-1 flex flex-col p-0">
+          <CardContent className="flex-1 flex flex-col p-0 relative">
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div 
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+            >
               {messages.map((message) => (
                 <motion.div
                   key={message.id}
@@ -286,6 +342,27 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Scroll to Bottom Button */}
+            <AnimatePresence>
+              {showScrollButton && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="absolute bottom-20 right-4 z-10"
+                >
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={scrollToBottom}
+                    className="w-8 h-8 p-0 rounded-full bg-white shadow-lg border-blue-200 hover:bg-blue-50"
+                  >
+                    <ArrowDown className="w-4 h-4 text-blue-600" />
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Quick Actions */}
             {messages.length <= 1 && (
               <div className="p-4 border-t border-gray-200 dark:border-gray-700">
@@ -314,6 +391,21 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
 
             {/* Input Area */}
             <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+              {/* Stop Button - shown when loading */}
+              {isLoading && (
+                <div className="mb-3 flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={stopResponse}
+                    className="text-red-600 border-red-200 hover:bg-red-50 flex items-center gap-2"
+                  >
+                    <Square className="w-3 h-3" />
+                    {currentLanguage === 'hi' ? 'रोकें' : 'Stop'}
+                  </Button>
+                </div>
+              )}
+              
               <div className="flex items-center gap-2">
                 <div className="flex-1 relative">
                   <Input
@@ -338,11 +430,11 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
                   )}
                 </div>
                 <Button
-                  onClick={handleSendMessage}
-                  disabled={isLoading || !inputValue.trim()}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={isLoading ? stopResponse : handleSendMessage}
+                  disabled={isLoading ? false : !inputValue.trim()}
+                  className={`${isLoading ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                 >
-                  <Send className="w-4 h-4" />
+                  {isLoading ? <Square className="w-4 h-4" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
               {isListening && (

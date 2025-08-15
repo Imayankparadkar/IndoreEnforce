@@ -183,7 +183,7 @@ export default function TrainingVideos() {
     totalVideos: videos.length,
     totalViews: videos.reduce((sum, video) => sum + parseFloat(video.views.replace('K', '')) * 1000, 0),
     averageRating: videos.reduce((sum, video) => sum + video.rating, 0) / videos.length,
-    languages: [...new Set(videos.map(v => v.language))].length
+    languages: Array.from(new Set(videos.map(v => v.language))).length
   };
 
   return (

@@ -34,7 +34,7 @@ export default function Navigation() {
                 <Button
                   variant="ghost"
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-white hover:bg-blue-700 transition-colors whitespace-nowrap ${
-                    isActive ? "bg-blue-700" : ""
+                    isActive ? "bg-blue-700 text-white" : "text-white"
                   }`}
                 >
                   <Icon className="h-4 w-4" />

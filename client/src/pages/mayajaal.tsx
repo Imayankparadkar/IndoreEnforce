@@ -32,8 +32,8 @@ export default function MayaJaal() {
     <div className="space-y-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-          <NetworkIcon className="text-blue-600 mr-3" />
+        <h1 className="text-3xl font-bold text-white mb-2 flex items-center bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-lg">
+          <NetworkIcon className="text-white mr-3" />
           MAYAJAAL - Web Intelligence System
         </h1>
         <p className="text-gray-600">

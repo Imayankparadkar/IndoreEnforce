@@ -1,11 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import ThreatMap from "@/components/vajra/threat-map";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Map, MapPin, BarChart3, Clock } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Map, MapPin, BarChart3, Clock, Shield, AlertTriangle, CheckCircle, Bell } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface PoliceStation {
+  id: string;
+  name: string;
+  location: [number, number];
+  contact: string;
+  notified: boolean;
+  lastAlert: Date | null;
+}
+
+interface HeatZone {
+  id: string;
+  center: [number, number];
+  radius: number;
+  intensity: 'low' | 'medium' | 'high';
+  scamCount: number;
+  lastUpdated: Date;
+}
 
 export default function Vajra() {
   const [filters, setFilters] = useState({
@@ -13,6 +33,17 @@ export default function Vajra() {
     timeframe: "24h",
     riskLevel: "all",
   });
+  
+  const [policeAlerts, setPoliceAlerts] = useState<Array<{
+    id: string;
+    station: string;
+    location: string;
+    threat: string;
+    timestamp: Date;
+    status: 'sent' | 'acknowledged' | 'responded';
+  }>>([]);
+  
+  const [selectedMarker, setSelectedMarker] = useState<any>(null);
 
   const { data: threatData, refetch } = useQuery({
     queryKey: ["/api/threat-data"],
@@ -36,18 +67,130 @@ export default function Vajra() {
     { label: "Response Time", value: `${Math.floor(Math.random() * 15) + 2} min`, icon: "⏱️" },
   ];
 
+  // Mock police stations data
+  const policeStations: PoliceStation[] = [
+    {
+      id: "ps1",
+      name: "Vijay Nagar Police Station",
+      location: [22.7196, 75.8577],
+      contact: "0731-2530530",
+      notified: true,
+      lastAlert: new Date(Date.now() - 30 * 60 * 1000) // 30 minutes ago
+    },
+    {
+      id: "ps2", 
+      name: "Palasia Police Station",
+      location: [22.7074, 75.8561],
+      contact: "0731-2530531",
+      notified: false,
+      lastAlert: null
+    },
+    {
+      id: "ps3",
+      name: "MIG Police Station", 
+      location: [22.6868, 75.8630],
+      contact: "0731-2530532",
+      notified: true,
+      lastAlert: new Date(Date.now() - 45 * 60 * 1000) // 45 minutes ago
+    }
+  ];
+
+  // Mock heat zones data
+  const heatZones: HeatZone[] = [
+    {
+      id: "hz1",
+      center: [22.7196, 75.8577],
+      radius: 2000,
+      intensity: 'high',
+      scamCount: 15,
+      lastUpdated: new Date()
+    },
+    {
+      id: "hz2", 
+      center: [22.7074, 75.8561],
+      radius: 1500,
+      intensity: 'medium',
+      scamCount: 8,
+      lastUpdated: new Date()
+    },
+    {
+      id: "hz3",
+      center: [22.6868, 75.8630],
+      radius: 1000,
+      intensity: 'low',
+      scamCount: 3,
+      lastUpdated: new Date()
+    }
+  ];
+
+  // Generate police alerts
+  useEffect(() => {
+    const generateAlert = () => {
+      const alerts = [
+        {
+          id: Date.now().toString(),
+          station: "Vijay Nagar Police Station",
+          location: "Vijay Nagar Area",
+          threat: "High UPI fraud activity detected",
+          timestamp: new Date(),
+          status: 'sent' as const
+        }
+      ];
+      setPoliceAlerts(prev => [...alerts, ...prev].slice(0, 10));
+    };
+
+    // Generate initial alerts and periodic updates
+    generateAlert();
+    const interval = setInterval(generateAlert, 120000); // Every 2 minutes
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-          <Map className="text-blue-600 mr-3" />
+        <h1 className="text-3xl font-bold text-white mb-2 flex items-center bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-lg">
+          <Map className="text-white mr-3" />
           VAJRA - Real-Time Threat Map
         </h1>
         <p className="text-gray-600">
-          Visualize cybercrime patterns across Indore in real-time
+          Visualize cybercrime patterns across Indore in real-time with police notifications and heat zones
         </p>
       </div>
+
+      {/* Police Alert System */}
+      <AnimatePresence>
+        {policeAlerts.slice(0, 3).map((alert) => (
+          <motion.div
+            key={alert.id}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-4"
+          >
+            <Alert className="border-orange-200 bg-orange-50">
+              <Bell className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="ml-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <strong>Police Notification:</strong> {alert.threat} in {alert.location}
+                    <div className="text-xs text-gray-600 mt-1">
+                      Sent to {alert.station} at {alert.timestamp.toLocaleTimeString()}
+                    </div>
+                  </div>
+                  <Badge 
+                    variant={alert.status === 'sent' ? 'destructive' : alert.status === 'acknowledged' ? 'secondary' : 'default'}
+                    className="ml-4"
+                  >
+                    {alert.status === 'sent' ? 'Police Notified' : alert.status === 'acknowledged' ? 'Acknowledged' : 'Responding'}
+                  </Badge>
+                </div>
+              </AlertDescription>
+            </Alert>
+          </motion.div>
+        ))}
+      </AnimatePresence>
 
       {/* Controls */}
       <Card>
@@ -120,12 +263,159 @@ export default function Vajra() {
         </CardContent>
       </Card>
 
-      {/* Map Container */}
-      <Card>
-        <CardContent className="pt-6">
-          <ThreatMap threatData={threatData} filters={filters} />
+      {/* Police Stations Status Panel */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-blue-600" />
+            Police Station Alert Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {policeStations.map((station) => (
+              <div key={station.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${
+                    station.notified ? 'bg-orange-500 animate-pulse' : 'bg-gray-300'
+                  }`} />
+                  <div>
+                    <div className="font-medium text-sm">{station.name}</div>
+                    <div className="text-xs text-gray-600">{station.contact}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  {station.notified ? (
+                    <Badge variant="destructive" className="text-xs">
+                      Alert Sent
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-xs">
+                      Standby
+                    </Badge>
+                  )}
+                  {station.lastAlert && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      {Math.floor((Date.now() - station.lastAlert.getTime()) / 60000)}m ago
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
+
+      {/* Heat Zones Legend */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            Threat Heat Zones
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {heatZones.map((zone) => (
+              <div key={zone.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full ${
+                    zone.intensity === 'high' ? 'bg-red-500' :
+                    zone.intensity === 'medium' ? 'bg-orange-500' : 'bg-yellow-500'
+                  }`} />
+                  <div>
+                    <div className="font-medium text-sm capitalize">{zone.intensity} Risk Zone</div>
+                    <div className="text-xs text-gray-600">{zone.scamCount} active reports</div>
+                  </div>
+                </div>
+                <Badge 
+                  variant={zone.intensity === 'high' ? 'destructive' : 
+                         zone.intensity === 'medium' ? 'secondary' : 'outline'}
+                  className="text-xs"
+                >
+                  {zone.intensity.toUpperCase()}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Map Container */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Interactive Threat Map with Police Notifications</span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleUpdateMap}
+              className="flex items-center gap-2"
+            >
+              <Clock className="w-4 h-4" />
+              Refresh Data
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <ThreatMap 
+            threatData={threatData} 
+            filters={filters}
+            policeStations={policeStations}
+            heatZones={heatZones}
+            onMarkerClick={setSelectedMarker}
+          />
+        </CardContent>
+      </Card>
+      
+      {/* Selected Marker Details */}
+      {selectedMarker && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Incident Details</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSelectedMarker(null)}
+                >
+                  ×
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Scam Type</div>
+                  <div className="text-lg font-semibold">{selectedMarker.scamType}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Risk Level</div>
+                  <Badge 
+                    variant={selectedMarker.riskLevel === 'high' ? 'destructive' : 
+                           selectedMarker.riskLevel === 'medium' ? 'secondary' : 'outline'}
+                  >
+                    {selectedMarker.riskLevel?.toUpperCase()}
+                  </Badge>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Location</div>
+                  <div>{selectedMarker.location}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-700">Reports</div>
+                  <div>{selectedMarker.reportCount} incidents</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Statistics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

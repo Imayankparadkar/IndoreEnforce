@@ -23,11 +23,15 @@ import TrainingVideos from "@/pages/training-videos";
 import FAQ from "@/pages/faq";
 import PrivacyPolicy from "@/pages/legal/privacy-policy";
 import TermsOfService from "@/pages/legal/terms-of-service";
+import Legal from "@/pages/legal/legal";
+import Compliance from "@/pages/legal/compliance";
+import Accessibility from "@/pages/accessibility";
 import CybercrimePreventionPage from "@/pages/resources/cybercrime-prevention";
 import SecurityTips from "@/pages/resources/security-tips";
 import AwarenessPrograms from "@/pages/resources/awareness-programs";
 import IncidentResponse from "@/pages/resources/incident-response";
 import Downloads from "@/pages/resources/downloads";
+import Resources from "@/pages/resources/resources";
 import HelpCenter from "@/pages/help-center";
 import UserGuide from "@/pages/user-guide";
 import ReportBug from "@/pages/report-bug";
@@ -55,8 +59,12 @@ function Router() {
       <Route path="/user-guide" component={UserGuide} />
       <Route path="/training-videos" component={TrainingVideos} />
       <Route path="/faq" component={FAQ} />
+      <Route path="/legal" component={Legal} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/compliance" component={Compliance} />
+      <Route path="/accessibility" component={Accessibility} />
+      <Route path="/resources" component={Resources} />
       <Route path="/cybercrime-prevention" component={CybercrimePreventionPage} />
       <Route path="/security-tips" component={SecurityTips} />
       <Route path="/awareness-programs" component={AwarenessPrograms} />

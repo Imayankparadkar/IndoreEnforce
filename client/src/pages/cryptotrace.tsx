@@ -406,9 +406,27 @@ Do not contact law enforcement or your files will be permanently deleted.
                   </Button>
                   {generateReportMutation.isSuccess && (
                     <Button
-                      onClick={() => {
-                        const currentWalletData = walletAnalysis?.find(w => w.address === selectedWallet);
-                        window.open(`/api/cryptotrace/generate-report?download=true`, '_blank');
+                      onClick={async () => {
+                        try {
+                          const currentWalletData = walletAnalysis?.find(w => w.address === selectedWallet);
+                          const response = await apiRequest('POST', '/api/cryptotrace/generate-report?download=true', {
+                            walletData: currentWalletData,
+                            extractedData
+                          });
+                          
+                          // Handle the PDF download
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `intel-pack-${selectedWallet?.substring(0, 8)}.pdf`;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                        } catch (error) {
+                          console.error('PDF download failed:', error);
+                        }
                       }}
                       variant="outline"
                       className="bg-green-600 hover:bg-green-700 text-white"

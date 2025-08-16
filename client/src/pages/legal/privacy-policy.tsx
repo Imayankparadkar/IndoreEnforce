@@ -10,10 +10,10 @@ export default function PrivacyPolicy() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-white mb-4">
             Privacy Policy
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-white max-w-2xl mx-auto">
             Your privacy and data security are fundamental to our mission of protecting citizens from cybercrime.
           </p>
           <div className="flex items-center justify-center gap-2 mt-4 text-sm text-gray-500">

@@ -147,10 +147,10 @@ export default function AwarenessPrograms() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-bold text-white mb-4">
             Cybersecurity Awareness Programs
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-white max-w-2xl mx-auto">
             Community-focused programs to enhance cybersecurity awareness and digital literacy across Indore
           </p>
         </div>

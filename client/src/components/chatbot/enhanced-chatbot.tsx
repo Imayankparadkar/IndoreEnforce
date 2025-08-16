@@ -209,6 +209,16 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
     setIsLoading(false);
   };
 
+  const toggleSpeech = () => {
+    const newSpeechState = !isSpeechEnabled;
+    setIsSpeechEnabled(newSpeechState);
+    
+    // If disabling speech, stop any current speech
+    if (!newSpeechState && 'speechSynthesis' in window) {
+      speechSynthesis.cancel();
+    }
+  };
+
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
       setIsListening(true);
@@ -279,8 +289,12 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setIsSpeechEnabled(!isSpeechEnabled)}
+                  onClick={toggleSpeech}
                   className="text-white hover:bg-white/20"
+                  title={isSpeechEnabled ? 
+                    (currentLanguage === 'hi' ? 'आवाज़ बंद करें' : 'Turn off voice') : 
+                    (currentLanguage === 'hi' ? 'आवाज़ चालू करें' : 'Turn on voice')
+                  }
                 >
                   {isSpeechEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
                 </Button>
@@ -300,7 +314,8 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
             {/* Messages Area */}
             <div 
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+              className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth max-h-96"
+              style={{ scrollbarWidth: 'thin', scrollbarColor: '#cbd5e0 #f7fafc' }}
             >
               {messages.map((message) => (
                 <motion.div
@@ -355,9 +370,10 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
                     variant="outline"
                     size="sm"
                     onClick={scrollToBottom}
-                    className="w-8 h-8 p-0 rounded-full bg-white shadow-lg border-blue-200 hover:bg-blue-50"
+                    className="w-8 h-8 p-0 rounded-full bg-white shadow-lg border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all"
+                    title={currentLanguage === 'hi' ? 'नीचे स्क्रॉल करें' : 'Scroll to bottom'}
                   >
-                    <ArrowDown className="w-4 h-4 text-blue-600" />
+                    <ArrowDown className="w-4 h-4 text-blue-600 animate-bounce" />
                   </Button>
                 </motion.div>
               )}
@@ -394,15 +410,21 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
               {/* Stop Button - shown when loading */}
               {isLoading && (
                 <div className="mb-3 flex justify-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={stopResponse}
-                    className="text-red-600 border-red-200 hover:bg-red-50 flex items-center gap-2"
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
                   >
-                    <Square className="w-3 h-3" />
-                    {currentLanguage === 'hi' ? 'रोकें' : 'Stop'}
-                  </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={stopResponse}
+                      className="text-red-600 border-red-200 hover:bg-red-50 flex items-center gap-2 animate-pulse"
+                    >
+                      <Square className="w-3 h-3" />
+                      {currentLanguage === 'hi' ? 'खोज रोकें' : 'Stop Search'}
+                    </Button>
+                  </motion.div>
                 </div>
               )}
               
@@ -432,9 +454,15 @@ export function EnhancedChatbot({ isOpen, onClose }: ChatbotProps) {
                 <Button
                   onClick={isLoading ? stopResponse : handleSendMessage}
                   disabled={isLoading ? false : !inputValue.trim()}
-                  className={`${isLoading ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                  className={`transition-colors duration-200 ${
+                    isLoading ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                  title={isLoading ? 
+                    (currentLanguage === 'hi' ? 'खोज रोकें' : 'Stop search') : 
+                    (currentLanguage === 'hi' ? 'संदेश भेजें' : 'Send message')
+                  }
                 >
-                  {isLoading ? <Square className="w-4 h-4" /> : <Send className="w-4 h-4" />}
+                  {isLoading ? <Square className="w-4 h-4 animate-pulse" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
               {isListening && (

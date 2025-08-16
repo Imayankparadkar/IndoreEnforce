@@ -178,7 +178,7 @@ Do not contact law enforcement or your files will be permanently deleted.
           <Coins className="text-white mr-3" />
           CRYPTOTRACE - Crypto Wallet Intelligence
         </motion.h1>
-        <p className="text-gray-600">
+        <p className="text-white">
           Analyze ransom notes, trace cryptocurrency wallets, and generate intelligence reports
         </p>
       </div>

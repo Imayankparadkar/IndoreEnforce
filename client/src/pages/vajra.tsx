@@ -152,9 +152,9 @@ export default function Vajra() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2 flex items-center bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-lg">
           <Map className="text-white mr-3" />
-          VAJRA - Real-Time Threat Map
+          TRINETRA - Real-Time Threat Map
         </h1>
-        <p className="text-gray-600">
+        <p className="text-white">
           Visualize cybercrime patterns across Indore in real-time with police notifications and heat zones
         </p>
       </div>

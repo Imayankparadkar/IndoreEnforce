@@ -7,10 +7,10 @@ export default function Compliance() {
     <div className="space-y-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
-          <FileCheck className="mr-3 h-8 w-8 text-green-600" />
+          <FileCheck className="mr-3 h-8 w-8 text-white" />
           Compliance Framework
         </h1>
-        <p className="text-gray-600">
+        <p className="text-white">
           Regulatory compliance and adherence to cybersecurity standards
         </p>
       </div>

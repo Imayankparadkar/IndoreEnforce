@@ -13,9 +13,9 @@ export default function Kautilya() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white mb-2 flex items-center bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-lg">
           <Brain className="text-white mr-3" />
-          KAUTILYA - AI Investigation Assistant
+          CHANAKYA - AI Investigation Assistant
         </h1>
-        <p className="text-gray-600">
+        <p className="text-white">
           Advanced AI-powered cybercrime case analysis and investigation
         </p>
       </div>

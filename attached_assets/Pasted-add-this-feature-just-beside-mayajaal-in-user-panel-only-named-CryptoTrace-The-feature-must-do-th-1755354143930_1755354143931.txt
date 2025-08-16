@@ -1,0 +1,60 @@
+add this feature just beside mayajaal in user panel only named CryptoTrace
+
+The feature must do the following:
+
+1. Input:  
+   - Analyst pastes ransom note text into a web form.  
+   - Backend extracts any crypto wallet addresses (BTC and ETH regex) and aliases from the note.  
+
+2. Wallet tracing (ETH focus first):  
+   - Use Etherscan free API key (from .env file).  
+   - Fetch wallet balance and last 20 transactions.  
+   - Compute a simple risk score:  
+        +25 if wallet has >20 unique incoming addresses  
+        +25 if >60% are micro-transactions (<0.01 ETH)  
+        +20 if transactions involve known exchange addresses (keep a sample JSON list)  
+        +10 if there are bursts of 5+ tx in under 24h  
+   - Cap score at 100.  
+
+3. Visualization:  
+   - Frontend shows wallet page with:  
+       - Balance  
+       - Last 20 tx (table: from, to, value, timestamp)  
+       - Risk score + explanation (“82/100 because: 25 fan-in, 25 micro-txs, 20 exchange cluster overlap, 10 time-burst”).  
+       - Sankey diagram (Plotly or D3) showing flow of ETH from top 5 senders into the ransom wallet.  
+
+4. Attribution graph:  
+   - Build a small graph database in Neo4j (or fallback SQLite + Cytoscape.js).  
+   - Nodes: Alias, Wallet, Email, IP, RansomwareFamily.  
+   - Edges: “associated-with”.  
+   - Show in browser using neovis.js.  
+
+5. OSINT stubs (optional for now, but scaffold it):  
+   - Add placeholder worker that queries AbuseIPDB and urlscan.io for any IPs/domains in the note (store results in JSON).  
+
+6. Report generator:  
+   - Button “Export Intel Pack” → backend compiles summary into a PDF using WeasyPrint.  
+   - Include wallet summary, OSINT hits, attribution graph snapshot, and append evidence log (JSON entries hashed with SHA256).  
+
+7. Backend stack:  
+   - FastAPI + httpx for API calls.  
+   - Use asyncio tasks for background jobs.  
+   - Store artifacts in SQLite DB.  
+   - Keep logs with SHA-256 hashes chained together (Akhanda-lite style).  
+
+8. Frontend stack:  
+   - React + Tailwind + shadcn/ui for components.  
+   - neovis.js for graph.  
+   - Plotly for Sankey.  
+   - Simple upload form + live job status (spinners).  
+
+Additional requirements:  
+- Keep all secrets (Etherscan API key) in a .env file.  
+- Provide sample .env.example file.  
+- Provide seed data so app can run in SIM mode (demo data if rate-limited).  
+- Comment code clearly.  
+- Make the UI clean and minimal, but functional.  
+
+
+
+

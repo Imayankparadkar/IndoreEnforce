@@ -88,19 +88,36 @@ async function analyzeEthereumWallet(address: string) {
     );
     const balanceData = await balanceResponse.json();
 
-    // Fetch transaction history (last 20)
+    // Fetch transaction history (last 100 for better analysis)
     const txResponse = await fetch(
-      `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=20&sort=desc&apikey=${ETHERSCAN_API_KEY}`
+      `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=100&sort=desc&apikey=${ETHERSCAN_API_KEY}`
     );
     const txData = await txResponse.json();
 
+    // Fetch internal transactions
+    const internalTxResponse = await fetch(
+      `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${ETHERSCAN_API_KEY}`
+    );
+    const internalTxData = await internalTxResponse.json();
+
+    // Fetch ERC-20 token transfers
+    const tokenTxResponse = await fetch(
+      `https://api.etherscan.io/api?module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&page=1&offset=50&sort=desc&apikey=${ETHERSCAN_API_KEY}`
+    );
+    const tokenTxData = await tokenTxResponse.json();
+
     const balance = (parseInt(balanceData.result) / 1e18).toString();
     const transactions = txData.result || [];
+    const internalTransactions = internalTxData.result || [];
+    const tokenTransactions = tokenTxData.result || [];
 
-    // Calculate risk score
-    const riskAssessment = calculateRiskScore(address, transactions);
+    // Calculate advanced risk score
+    const riskAssessment = calculateAdvancedRiskScore(address, transactions, internalTransactions, tokenTransactions);
+    
+    // Generate attribution data
+    const attributionData = generateAttributionData(address, transactions, tokenTransactions);
 
-    // Format transactions
+    // Format transactions with enhanced data
     const formattedTxs = transactions.map((tx: any) => ({
       hash: tx.hash,
       from: tx.from,
@@ -108,6 +125,37 @@ async function analyzeEthereumWallet(address: string) {
       value: (parseInt(tx.value) / 1e18).toString(),
       timestamp: new Date(parseInt(tx.timeStamp) * 1000).toISOString(),
       blockNumber: parseInt(tx.blockNumber),
+      gasUsed: parseInt(tx.gasUsed || '0'),
+      gasPrice: parseInt(tx.gasPrice || '0'),
+      isIncoming: tx.to.toLowerCase() === address.toLowerCase(),
+      methodId: tx.methodId || tx.input?.substring(0, 10) || '0x',
+      status: tx.txreceipt_status === '1' ? 'success' : 'failed'
+    }));
+
+    // Format internal transactions
+    const formattedInternalTxs = internalTransactions.map((tx: any) => ({
+      hash: tx.hash,
+      from: tx.from,
+      to: tx.to,
+      value: (parseInt(tx.value) / 1e18).toString(),
+      timestamp: new Date(parseInt(tx.timeStamp) * 1000).toISOString(),
+      blockNumber: parseInt(tx.blockNumber),
+      type: 'internal',
+      isIncoming: tx.to.toLowerCase() === address.toLowerCase()
+    }));
+
+    // Format token transactions
+    const formattedTokenTxs = tokenTransactions.map((tx: any) => ({
+      hash: tx.hash,
+      from: tx.from,
+      to: tx.to,
+      value: tx.value,
+      timestamp: new Date(parseInt(tx.timeStamp) * 1000).toISOString(),
+      blockNumber: parseInt(tx.blockNumber),
+      tokenName: tx.tokenName,
+      tokenSymbol: tx.tokenSymbol,
+      tokenDecimal: tx.tokenDecimal,
+      type: 'token',
       isIncoming: tx.to.toLowerCase() === address.toLowerCase()
     }));
 
@@ -116,11 +164,15 @@ async function analyzeEthereumWallet(address: string) {
       type: 'ETH',
       balance: `${balance}`,
       transactions: formattedTxs,
+      internalTransactions: formattedInternalTxs,
+      tokenTransactions: formattedTokenTxs,
       riskScore: riskAssessment.score,
       riskFactors: riskAssessment.factors,
+      attributionData,
       lastActivity: transactions.length > 0 ? 
         new Date(parseInt(transactions[0].timeStamp) * 1000).toLocaleDateString() : 
-        'No activity found'
+        'No activity found',
+      flowAnalysis: generateFlowAnalysis(formattedTxs, formattedInternalTxs)
     };
 
   } catch (error) {
@@ -129,7 +181,7 @@ async function analyzeEthereumWallet(address: string) {
   }
 }
 
-function calculateRiskScore(address: string, transactions: any[]) {
+function calculateAdvancedRiskScore(address: string, transactions: any[], internalTxs: any[], tokenTxs: any[]) {
   let score = 0;
   const factors = [];
 
@@ -191,6 +243,33 @@ function calculateRiskScore(address: string, transactions: any[]) {
     factors.push(`Transaction bursts detected: ${burstCount} clusters of 5+ tx within 24h`);
   }
 
+  // Risk Factor 5: Multiple token types (potential money laundering)
+  const uniqueTokens = new Set(tokenTxs.map(tx => tx.tokenSymbol));
+  if (uniqueTokens.size > 10) {
+    score += 15;
+    factors.push(`Multiple token types: ${uniqueTokens.size} different tokens`);
+  }
+
+  // Risk Factor 6: High internal transaction volume
+  if (internalTxs.length > transactions.length * 0.5) {
+    score += 10;
+    factors.push(`High internal transaction ratio: ${(internalTxs.length / transactions.length * 100).toFixed(1)}%`);
+  }
+
+  // Risk Factor 7: Contract interactions (potential DeFi mixing)
+  const contractTxs = transactions.filter(tx => tx.input && tx.input !== '0x');
+  if (contractTxs.length > transactions.length * 0.7) {
+    score += 15;
+    factors.push(`High contract interaction rate: ${(contractTxs.length / transactions.length * 100).toFixed(1)}%`);
+  }
+
+  // Risk Factor 8: Failed transactions (potential failed attacks)
+  const failedTxs = transactions.filter(tx => tx.txreceipt_status === '0');
+  if (failedTxs.length > 5) {
+    score += 10;
+    factors.push(`Multiple failed transactions: ${failedTxs.length} failed attempts`);
+  }
+
   // Cap score at 100
   score = Math.min(score, 100);
 
@@ -199,6 +278,86 @@ function calculateRiskScore(address: string, transactions: any[]) {
   }
 
   return { score, factors };
+}
+
+function generateAttributionData(address: string, transactions: any[], tokenTxs: any[]) {
+  const attribution = {
+    walletClusters: [] as any[],
+    exchangeConnections: [] as any[],
+    deFiProtocols: [] as any[],
+    suspiciousPatterns: [] as any[],
+    knownAddresses: [] as any[]
+  };
+
+  // Analyze frequent counterparties
+  const counterparties: { [key: string]: number } = {};
+  transactions.forEach(tx => {
+    const counterparty = tx.from.toLowerCase() === address.toLowerCase() ? tx.to : tx.from;
+    counterparties[counterparty] = (counterparties[counterparty] || 0) + 1;
+  });
+
+  // Find clusters (addresses with >5 interactions)
+  Object.entries(counterparties).forEach(([addr, count]) => {
+    if (count > 5) {
+      attribution.walletClusters.push({
+        address: addr,
+        interactionCount: count,
+        type: EXCHANGE_ADDRESSES.includes(addr) ? 'exchange' : 'unknown'
+      });
+    }
+  });
+
+  // Identify exchange connections
+  attribution.exchangeConnections = transactions
+    .filter(tx => 
+      EXCHANGE_ADDRESSES.includes(tx.from.toLowerCase()) || 
+      EXCHANGE_ADDRESSES.includes(tx.to.toLowerCase())
+    )
+    .map(tx => ({
+      exchange: EXCHANGE_ADDRESSES.includes(tx.from.toLowerCase()) ? tx.from : tx.to,
+      txHash: tx.hash,
+      amount: (parseInt(tx.value) / 1e18).toString(),
+      timestamp: tx.timeStamp
+    }));
+
+  return attribution;
+}
+
+function generateFlowAnalysis(transactions: any[], internalTxs: any[]) {
+  const allTxs = [...transactions, ...internalTxs];
+  
+  // Calculate flow metrics
+  const inflowTotal = allTxs
+    .filter(tx => tx.isIncoming)
+    .reduce((sum, tx) => sum + parseFloat(tx.value), 0);
+  
+  const outflowTotal = allTxs
+    .filter(tx => !tx.isIncoming)
+    .reduce((sum, tx) => sum + parseFloat(tx.value), 0);
+
+  // Time-based flow analysis
+  const dailyFlows: { [key: string]: { inflow: number; outflow: number } } = {};
+  
+  allTxs.forEach(tx => {
+    const date = new Date(tx.timestamp).toDateString();
+    if (!dailyFlows[date]) {
+      dailyFlows[date] = { inflow: 0, outflow: 0 };
+    }
+    
+    if (tx.isIncoming) {
+      dailyFlows[date].inflow += parseFloat(tx.value);
+    } else {
+      dailyFlows[date].outflow += parseFloat(tx.value);
+    }
+  });
+
+  return {
+    totalInflow: inflowTotal,
+    totalOutflow: outflowTotal,
+    netFlow: inflowTotal - outflowTotal,
+    dailyFlows,
+    averageTxValue: allTxs.reduce((sum, tx) => sum + parseFloat(tx.value), 0) / allTxs.length
+  };
 }
 
 function generateMockETHAnalysis(address: string) {
@@ -242,27 +401,109 @@ function generateMockBTCAnalysis(address: string) {
   };
 }
 
-export async function generateIntelligenceReport() {
+export async function generateIntelligenceReport(walletData?: any) {
   try {
-    // Create a comprehensive intelligence report
     const reportId = randomUUID();
     const timestamp = new Date().toISOString();
     
-    // In a real implementation, this would:
-    // 1. Compile all analysis results
-    // 2. Generate PDF using puppeteer or html-pdf-node
-    // 3. Create SHA-256 evidence chain
-    // 4. Store in secure location
+    // Generate comprehensive report content
+    const reportContent = generateReportContent(walletData, reportId, timestamp);
     
-    // For now, return a mock report path
+    // In a real implementation, this would use puppeteer or html-pdf-node to generate PDF
+    // For now, simulate PDF generation and return path
     const reportPath = `/reports/intel-pack-${reportId}.pdf`;
     
     console.log(`Generated intelligence report: ${reportPath}`);
     
-    return reportPath;
+    return {
+      success: true,
+      reportPath,
+      reportId,
+      timestamp,
+      content: reportContent
+    };
   } catch (error) {
     console.error('Error generating intelligence report:', error);
     throw new Error('Failed to generate intelligence report');
+  }
+}
+
+function generateReportContent(walletData: any, reportId: string, timestamp: string) {
+  return {
+    header: {
+      title: 'CRYPTOTRACE INTELLIGENCE REPORT',
+      reportId,
+      timestamp,
+      classification: 'RESTRICTED',
+      agency: 'Prahaar 360 - Cyber Crime Unit, Indore'
+    },
+    executiveSummary: {
+      walletAddress: walletData?.address || 'N/A',
+      riskScore: walletData?.riskScore || 0,
+      totalTransactions: walletData?.transactions?.length || 0,
+      suspiciousActivity: walletData?.riskFactors || []
+    },
+    technicalAnalysis: {
+      blockchainType: walletData?.type || 'ETH',
+      balance: walletData?.balance || '0',
+      lastActivity: walletData?.lastActivity || 'Unknown',
+      transactionPatterns: walletData?.flowAnalysis || {},
+      attributionData: walletData?.attributionData || {}
+    },
+    evidence: {
+      transactionHashes: walletData?.transactions?.slice(0, 10).map((tx: any) => tx.hash) || [],
+      evidenceChain: createEvidenceLog(walletData, ''),
+      forensicMarkers: generateForensicMarkers(walletData)
+    },
+    recommendations: generateRecommendations(walletData?.riskScore || 0),
+    legalBasis: {
+      applicableLaws: [
+        'IT Act 2000 - Section 66C (Identity Theft)',
+        'IT Act 2000 - Section 66D (Cheating by Personation)',
+        'IPC Section 420 (Cheating)'
+      ],
+      jurisdictionNotes: 'Applicable under Indian Cyber Laws'
+    }
+  };
+}
+
+function generateForensicMarkers(walletData: any) {
+  const markers = [];
+  
+  if (walletData?.riskScore > 70) {
+    markers.push('HIGH RISK: Multiple suspicious patterns detected');
+  }
+  
+  if (walletData?.attributionData?.exchangeConnections?.length > 0) {
+    markers.push('EXCHANGE ACTIVITY: Potential money laundering indicators');
+  }
+  
+  if (walletData?.transactions?.length > 100) {
+    markers.push('HIGH VOLUME: Extensive transaction history');
+  }
+  
+  return markers;
+}
+
+function generateRecommendations(riskScore: number) {
+  if (riskScore > 80) {
+    return [
+      'IMMEDIATE ACTION: Freeze associated accounts',
+      'Coordinate with exchange compliance teams',
+      'Issue lookout notices for associated identities',
+      'Request transaction monitoring'
+    ];
+  } else if (riskScore > 50) {
+    return [
+      'Enhanced monitoring recommended',
+      'Cross-reference with known fraud databases',
+      'Monitor for future suspicious activity'
+    ];
+  } else {
+    return [
+      'Standard monitoring sufficient',
+      'Periodic review recommended'
+    ];
   }
 }
 

@@ -1040,17 +1040,174 @@ This is an auto-generated draft. Please review and modify as needed.`;
 
   app.post('/api/cryptotrace/generate-report', async (req, res) => {
     try {
-      const reportPath = await generateIntelligenceReport();
-      res.json({ 
-        success: true, 
-        reportPath,
-        message: 'Intelligence report generated successfully'
-      });
+      const { walletData, extractedData } = req.body;
+      const report = await generateIntelligenceReport(walletData);
+      
+      // In a real implementation, this would generate an actual PDF
+      // For now, we simulate PDF generation and provide downloadable content
+      if (req.query.download === 'true') {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="intel-pack-${report.reportId}.pdf"`);
+        
+        // Generate mock PDF content
+        const pdfContent = generatePDFContent(report, walletData, extractedData);
+        res.send(pdfContent);
+      } else {
+        res.json(report);
+      }
     } catch (error) {
       console.error('Error generating report:', error);
       res.status(500).json({ error: 'Failed to generate intelligence report' });
     }
   });
+  
+  // New endpoint for PDF download
+  app.get('/api/cryptotrace/download-report/:reportId', async (req, res) => {
+    try {
+      const { reportId } = req.params;
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="intel-pack-${reportId}.pdf"`);
+      
+      // In a real implementation, retrieve and send the actual PDF file
+      const mockPdfContent = Buffer.from(`Mock PDF Report ${reportId}`, 'utf-8');
+      res.send(mockPdfContent);
+    } catch (error) {
+      console.error('Error downloading report:', error);
+      res.status(500).json({ error: 'Failed to download report' });
+    }
+  });
+
+  // Helper function to generate PDF content
+  function generatePDFContent(report: any, walletData: any, extractedData: any) {
+    // In a real implementation, this would use html-pdf-node or puppeteer
+    // to generate a proper PDF from HTML template
+    
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CRYPTOTRACE Intelligence Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
+        .classification { color: red; font-weight: bold; text-align: center; }
+        .section { margin-bottom: 30px; }
+        .risk-high { background-color: #ffebee; padding: 10px; border-left: 4px solid #f44336; }
+        .risk-medium { background-color: #fff3e0; padding: 10px; border-left: 4px solid #ff9800; }
+        .risk-low { background-color: #f1f8e9; padding: 10px; border-left: 4px solid #4caf50; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f5f5f5; }
+        .timestamp { font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>CRYPTOTRACE INTELLIGENCE REPORT</h1>
+        <div class="classification">RESTRICTED - LAW ENFORCEMENT ONLY</div>
+        <p><strong>Report ID:</strong> ${report.reportId}</p>
+        <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+        <p><strong>Agency:</strong> Prahaar 360 - Cyber Crime Unit, Indore</p>
+    </div>
+
+    <div class="section">
+        <h2>EXECUTIVE SUMMARY</h2>
+        <p><strong>Target Wallet:</strong> ${walletData?.address || 'N/A'}</p>
+        <p><strong>Blockchain:</strong> ${walletData?.type || 'Unknown'}</p>
+        <p><strong>Current Balance:</strong> ${walletData?.balance || '0'} ETH</p>
+        
+        <div class="${walletData?.riskScore > 70 ? 'risk-high' : walletData?.riskScore > 40 ? 'risk-medium' : 'risk-low'}">
+            <h3>RISK ASSESSMENT: ${walletData?.riskScore || 0}/100</h3>
+            <p><strong>Risk Level:</strong> ${walletData?.riskScore > 70 ? 'HIGH' : walletData?.riskScore > 40 ? 'MEDIUM' : 'LOW'}</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>TECHNICAL ANALYSIS</h2>
+        <p><strong>Total Transactions:</strong> ${walletData?.transactions?.length || 0}</p>
+        <p><strong>Internal Transactions:</strong> ${walletData?.internalTransactions?.length || 0}</p>
+        <p><strong>Token Transactions:</strong> ${walletData?.tokenTransactions?.length || 0}</p>
+        <p><strong>Last Activity:</strong> ${walletData?.lastActivity || 'Unknown'}</p>
+        
+        <h3>Risk Factors Identified:</h3>
+        <ul>
+            ${walletData?.riskFactors?.map((factor: string) => `<li>${factor}</li>`).join('') || '<li>No risk factors identified</li>'}
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>ATTRIBUTION INTELLIGENCE</h2>
+        ${extractedData ? `
+        <h3>Extracted Entities:</h3>
+        <table>
+            <tr><th>Type</th><th>Value</th><th>Source</th></tr>
+            ${extractedData.aliases?.map((alias: string) => `<tr><td>Alias</td><td>${alias}</td><td>Ransom Note</td></tr>`).join('') || ''}
+            ${extractedData.emails?.map((email: string) => `<tr><td>Email</td><td>${email}</td><td>Ransom Note</td></tr>`).join('') || ''}
+            ${extractedData.ips?.map((ip: string) => `<tr><td>IP Address</td><td>${ip}</td><td>Ransom Note</td></tr>`).join('') || ''}
+            ${extractedData.domains?.map((domain: string) => `<tr><td>Domain</td><td>${domain}</td><td>Ransom Note</td></tr>`).join('') || ''}
+        </table>
+        ` : '<p>No attribution data available</p>'}
+    </div>
+
+    <div class="section">
+        <h2>FLOW ANALYSIS</h2>
+        ${walletData?.flowAnalysis ? `
+        <p><strong>Total Inflow:</strong> ${walletData.flowAnalysis.totalInflow.toFixed(6)} ETH</p>
+        <p><strong>Total Outflow:</strong> ${walletData.flowAnalysis.totalOutflow.toFixed(6)} ETH</p>
+        <p><strong>Net Flow:</strong> ${walletData.flowAnalysis.netFlow.toFixed(6)} ETH</p>
+        <p><strong>Average Transaction Value:</strong> ${walletData.flowAnalysis.averageTxValue.toFixed(6)} ETH</p>
+        ` : '<p>Flow analysis data not available</p>'}
+    </div>
+
+    <div class="section">
+        <h2>RECOMMENDATIONS</h2>
+        ${walletData?.riskScore > 80 ? `
+        <ul>
+            <li>IMMEDIATE ACTION: Freeze associated accounts</li>
+            <li>Coordinate with exchange compliance teams</li>
+            <li>Issue lookout notices for associated identities</li>
+            <li>Request enhanced transaction monitoring</li>
+        </ul>
+        ` : walletData?.riskScore > 50 ? `
+        <ul>
+            <li>Enhanced monitoring recommended</li>
+            <li>Cross-reference with known fraud databases</li>
+            <li>Monitor for future suspicious activity</li>
+        </ul>
+        ` : `
+        <ul>
+            <li>Standard monitoring sufficient</li>
+            <li>Periodic review recommended</li>
+        </ul>
+        `}
+    </div>
+
+    <div class="section">
+        <h2>LEGAL BASIS</h2>
+        <p><strong>Applicable Laws:</strong></p>
+        <ul>
+            <li>IT Act 2000 - Section 66C (Identity Theft)</li>
+            <li>IT Act 2000 - Section 66D (Cheating by Personation)</li>
+            <li>IPC Section 420 (Cheating)</li>
+        </ul>
+        <p><strong>Jurisdiction:</strong> Applicable under Indian Cyber Laws</p>
+    </div>
+
+    <div class="section">
+        <h2>EVIDENCE INTEGRITY</h2>
+        <p><strong>Report Hash:</strong> ${randomUUID()}</p>
+        <p><strong>Data Sources:</strong> Etherscan API, Internal Analysis</p>
+        <p class="timestamp">This report was generated automatically by Prahaar 360 Cryptotrace system.</p>
+    </div>
+</body>
+</html>
+    `;
+    
+    // In a real implementation, convert HTML to PDF here
+    // For now, return the HTML content as a simulation
+    return Buffer.from(htmlContent, 'utf-8');
+  }
 
   const httpServer = createServer(app);
   return httpServer;

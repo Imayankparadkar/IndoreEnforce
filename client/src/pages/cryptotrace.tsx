@@ -32,9 +32,13 @@ interface WalletAnalysisResult {
   type: 'BTC' | 'ETH';
   balance: string;
   transactions: any[];
+  internalTransactions?: any[];
+  tokenTransactions?: any[];
   riskScore: number;
   riskFactors: string[];
+  attributionData?: any;
   lastActivity: string;
+  flowAnalysis?: any;
 }
 
 export default function CryptoTrace() {
@@ -103,7 +107,11 @@ export default function CryptoTrace() {
   // Generate intelligence report
   const generateReportMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/cryptotrace/generate-report', {});
+      const currentWalletData = walletAnalysis?.find(w => w.address === selectedWallet);
+      const response = await apiRequest('POST', '/api/cryptotrace/generate-report', {
+        walletData: currentWalletData,
+        extractedData
+      });
       const data = await response.json();
       return data;
     }
@@ -346,18 +354,26 @@ Do not contact law enforcement or your files will be permanently deleted.
               
               <TabsContent value="transactions">
                 <TransactionTable 
-                  transactions={walletAnalysis.find(w => w.address === selectedWallet)?.transactions || []} 
+                  transactions={walletAnalysis.find(w => w.address === selectedWallet)?.transactions || []}
+                  internalTransactions={walletAnalysis.find(w => w.address === selectedWallet)?.internalTransactions || []}
+                  tokenTransactions={walletAnalysis.find(w => w.address === selectedWallet)?.tokenTransactions || []}
                 />
               </TabsContent>
               
               <TabsContent value="flow">
                 <SankeyDiagram 
-                  transactions={walletAnalysis.find(w => w.address === selectedWallet)?.transactions || []} 
+                  transactions={walletAnalysis.find(w => w.address === selectedWallet)?.transactions || []}
+                  internalTransactions={walletAnalysis.find(w => w.address === selectedWallet)?.internalTransactions || []}
+                  flowAnalysis={walletAnalysis.find(w => w.address === selectedWallet)?.flowAnalysis}
                 />
               </TabsContent>
               
               <TabsContent value="attribution">
-                <AttributionGraph walletAddress={selectedWallet} />
+                <AttributionGraph 
+                  walletAddress={selectedWallet}
+                  attributionData={walletAnalysis.find(w => w.address === selectedWallet)?.attributionData}
+                  extractedData={extractedData}
+                />
               </TabsContent>
               
               <TabsContent value="osint">
@@ -380,13 +396,32 @@ Do not contact law enforcement or your files will be permanently deleted.
                   Generate a comprehensive intelligence report with all analysis results, 
                   OSINT findings, and evidence log with SHA-256 hash chain.
                 </p>
-                <Button
-                  onClick={handleGenerateReport}
-                  disabled={generateReportMutation.isPending}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {generateReportMutation.isPending ? 'Generating...' : 'Export Intel Pack (PDF)'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleGenerateReport}
+                    disabled={generateReportMutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    {generateReportMutation.isPending ? 'Generating...' : 'Generate Intel Report'}
+                  </Button>
+                  {generateReportMutation.isSuccess && (
+                    <Button
+                      onClick={() => {
+                        const currentWalletData = walletAnalysis?.find(w => w.address === selectedWallet);
+                        window.open(`/api/cryptotrace/generate-report?download=true`, '_blank');
+                      }}
+                      variant="outline"
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      Export Intel Pack (PDF)
+                    </Button>
+                  )}
+                </div>
+                {generateReportMutation.isSuccess && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
+                    ✓ Intelligence report generated successfully! Click "Export Intel Pack (PDF)" to download.
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

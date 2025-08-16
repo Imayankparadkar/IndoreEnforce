@@ -6,7 +6,8 @@ import {
   Brain, 
   Network, 
   Users, 
-  ShieldQuestion 
+  ShieldQuestion,
+  Coins
 } from "lucide-react";
 
 const navItems = [
@@ -14,6 +15,7 @@ const navItems = [
   { path: "/vajra", label: "Vajra", icon: Map },
   { path: "/kautilya", label: "Kautilya", icon: Brain },
   { path: "/mayajaal", label: "MayaJaal", icon: Network },
+  { path: "/cryptotrace", label: "CryptoTrace", icon: Coins },
   { path: "/brahmanet", label: "BrahmaNet", icon: Users },
   { path: "/officer", label: "Officer Login", icon: ShieldQuestion },
 ];

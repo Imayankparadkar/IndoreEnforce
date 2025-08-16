@@ -15,6 +15,7 @@ import Dashboard from "@/pages/dashboard";
 import Vajra from "@/pages/vajra";
 import Kautilya from "@/pages/kautilya";
 import MayaJaal from "@/pages/mayajaal";
+import CryptoTrace from "@/pages/cryptotrace";
 import BrahmaNet from "@/pages/brahmanet";
 import Officer from "@/pages/officer";
 import Support from "@/pages/support";
@@ -47,6 +48,7 @@ function Router() {
       <Route path="/vajra" component={Vajra} />
       <Route path="/kautilya" component={Kautilya} />
       <Route path="/mayajaal" component={MayaJaal} />
+      <Route path="/cryptotrace" component={CryptoTrace} />
       <Route path="/brahmanet" component={BrahmaNet} />
       <Route path="/officer" component={Officer} />
       <Route path="/support" component={Support} />

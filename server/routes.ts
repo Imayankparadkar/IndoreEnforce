@@ -11,6 +11,7 @@ import {
   insertVajraActionSchema
 } from "@shared/schema";
 import { analyzeScamReport, generateChatResponse, investigationAssistant } from "./gemini";
+import { extractCryptoData, analyzeWallet, generateIntelligenceReport } from "./cryptotrace";
 import multer from "multer";
 import { randomUUID } from "crypto";
 
@@ -1001,6 +1002,53 @@ This is an auto-generated draft. Please review and modify as needed.`;
       res.json(vajraAction);
     } catch (error) {
       res.status(500).json({ message: "Failed to create Vajra action" });
+    }
+  });
+
+  // CryptoTrace Routes
+  app.post('/api/cryptotrace/extract', async (req, res) => {
+    try {
+      const { ransomNote } = req.body;
+      
+      if (!ransomNote) {
+        return res.status(400).json({ error: 'Ransom note text is required' });
+      }
+
+      const extractedData = extractCryptoData(ransomNote);
+      res.json(extractedData);
+    } catch (error) {
+      console.error('Error extracting crypto data:', error);
+      res.status(500).json({ error: 'Failed to extract crypto data' });
+    }
+  });
+
+  app.post('/api/cryptotrace/analyze-wallet', async (req, res) => {
+    try {
+      const { address } = req.body;
+      
+      if (!address) {
+        return res.status(400).json({ error: 'Wallet address is required' });
+      }
+
+      const analysis = await analyzeWallet(address);
+      res.json(analysis);
+    } catch (error) {
+      console.error('Error analyzing wallet:', error);
+      res.status(500).json({ error: 'Failed to analyze wallet' });
+    }
+  });
+
+  app.post('/api/cryptotrace/generate-report', async (req, res) => {
+    try {
+      const reportPath = await generateIntelligenceReport();
+      res.json({ 
+        success: true, 
+        reportPath,
+        message: 'Intelligence report generated successfully'
+      });
+    } catch (error) {
+      console.error('Error generating report:', error);
+      res.status(500).json({ error: 'Failed to generate intelligence report' });
     }
   });
 

@@ -173,6 +173,45 @@ export const insertVajraActionSchema = createInsertSchema(vajraActions).omit({
   executedAt: true,
 });
 
+// CryptoTrace tables
+export const cryptoAnalysis = pgTable("crypto_analysis", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ransomNote: text("ransom_note").notNull(),
+  extractedData: jsonb("extracted_data").$type<{
+    walletAddresses: { type: 'BTC' | 'ETH'; address: string }[];
+    aliases: string[];
+    emails: string[];
+    ips: string[];
+    domains: string[];
+  }>(),
+  analysisResults: jsonb("analysis_results").$type<Record<string, any>>(),
+  reportPath: text("report_path"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const walletIntelligence = pgTable("wallet_intelligence", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  address: text("address").notNull(),
+  walletType: text("wallet_type").notNull(),
+  balance: text("balance"),
+  riskScore: integer("risk_score"),
+  riskFactors: jsonb("risk_factors").$type<string[]>().default([]),
+  transactions: jsonb("transactions").$type<any[]>().default([]),
+  lastActivity: text("last_activity"),
+  osintData: jsonb("osint_data").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCryptoAnalysisSchema = createInsertSchema(cryptoAnalysis).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertWalletIntelligenceSchema = createInsertSchema(walletIntelligence).omit({
+  id: true,
+  createdAt: true
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -192,3 +231,7 @@ export type MayajaalProfile = typeof mayajaalProfiles.$inferSelect;
 export type InsertMayajaalProfile = z.infer<typeof insertMayajaalProfileSchema>;
 export type VajraAction = typeof vajraActions.$inferSelect;
 export type InsertVajraAction = z.infer<typeof insertVajraActionSchema>;
+export type CryptoAnalysis = typeof cryptoAnalysis.$inferSelect;
+export type InsertCryptoAnalysis = z.infer<typeof insertCryptoAnalysisSchema>;
+export type WalletIntelligence = typeof walletIntelligence.$inferSelect;
+export type InsertWalletIntelligence = z.infer<typeof insertWalletIntelligenceSchema>;

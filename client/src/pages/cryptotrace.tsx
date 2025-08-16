@@ -40,6 +40,7 @@ export default function CryptoTrace() {
   const [ransomNote, setRansomNote] = useState('');
   const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
   const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
   const queryClient = useQueryClient();
 
   // Extract wallet addresses and entities from ransom note
@@ -47,8 +48,13 @@ export default function CryptoTrace() {
     mutationFn: async (note: string) => {
       return apiRequest('/api/cryptotrace/extract', 'POST', { ransomNote: note });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/cryptotrace/extracted'] });
+    onSuccess: (data) => {
+      console.log('Extraction successful:', data);
+      setExtractedData(data);
+      queryClient.setQueryData(['/api/cryptotrace/extracted'], data);
+    },
+    onError: (error) => {
+      console.error('Extraction failed:', error);
     }
   });
 
@@ -70,8 +76,11 @@ export default function CryptoTrace() {
         throw error;
       }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/cryptotrace/wallet-analysis'] });
+    onSuccess: (data) => {
+      console.log('Wallet analysis successful:', data);
+      const currentData = queryClient.getQueryData<WalletAnalysisResult[]>(['/api/cryptotrace/wallet-analysis']) || [];
+      const newData = [...currentData.filter(w => w.address !== data.address), data];
+      queryClient.setQueryData(['/api/cryptotrace/wallet-analysis'], newData);
     }
   });
 
@@ -82,16 +91,18 @@ export default function CryptoTrace() {
     }
   });
 
-  // Get extracted data
-  const { data: extractedData } = useQuery<ExtractedData>({
-    queryKey: ['/api/cryptotrace/extracted'],
-    enabled: false
-  });
+  // Get cached extracted data (now using state instead)
+  // const { data: extractedData } = useQuery<ExtractedData>({
+  //   queryKey: ['/api/cryptotrace/extracted'],
+  //   enabled: false,
+  //   initialData: undefined
+  // });
 
   // Get wallet analysis results
   const { data: walletAnalysis } = useQuery<WalletAnalysisResult[]>({
     queryKey: ['/api/cryptotrace/wallet-analysis'],
-    enabled: false
+    enabled: false,
+    initialData: []
   });
 
   const handleExtractData = () => {
@@ -107,6 +118,26 @@ export default function CryptoTrace() {
 
   const handleGenerateReport = () => {
     generateReportMutation.mutate();
+  };
+
+  const handleLoadSample = () => {
+    const sampleNote = `Your files have been encrypted with military-grade encryption.
+
+To recover your data, send payment to:
+Bitcoin: bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+Ethereum: 0x742d35Cc6da354aa7e9a9c4f47B3B4a9Be7CE
+
+Amount: 2.5 BTC or 15 ETH
+
+Contact: cryptoking99@tempmail.org
+Tor: darksite.onion
+
+Time limit: 72 hours. After that, the price doubles.
+
+Do not contact law enforcement or your files will be permanently deleted.
+
+- RansomMaster Team`;
+    setRansomNote(sampleNote);
   };
 
   return (
@@ -148,18 +179,40 @@ export default function CryptoTrace() {
                 onChange={(e) => setRansomNote(e.target.value)}
                 className="min-h-[200px] mb-4"
               />
-              <Button
-                onClick={handleExtractData}
-                disabled={!ransomNote.trim() || extractDataMutation.isPending}
-                className="w-full bg-orange-600 hover:bg-orange-700"
-              >
-                {extractDataMutation.isPending ? 'Extracting...' : 'Extract Crypto Addresses'}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleExtractData}
+                  disabled={!ransomNote.trim() || extractDataMutation.isPending}
+                  className="flex-1 bg-orange-600 hover:bg-orange-700"
+                >
+                  {extractDataMutation.isPending ? 'Extracting...' : 'Extract Crypto Addresses'}
+                </Button>
+                <Button
+                  onClick={handleLoadSample}
+                  variant="outline"
+                  className="px-3"
+                  disabled={extractDataMutation.isPending}
+                >
+                  Sample
+                </Button>
+              </div>
+              
+              {extractDataMutation.isError && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                  Error: Failed to extract crypto data. Please try again.
+                </div>
+              )}
+              
+              {extractDataMutation.isSuccess && extractedData && (
+                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
+                  ✓ Successfully extracted {extractedData.walletAddresses.length} wallet address(es)
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Extracted Data */}
-          {extractedData && (
+          {extractedData && extractedData.walletAddresses.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Extracted Intelligence</CardTitle>
@@ -230,6 +283,7 @@ export default function CryptoTrace() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
         >
+          {/* Loading state for wallet analysis */}
           {analyzeWalletMutation.isPending && (
             <Card>
               <CardHeader>
@@ -242,6 +296,18 @@ export default function CryptoTrace() {
                     Fetching transactions and computing risk factors...
                   </p>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {/* Show message when no data extracted */}
+          {extractDataMutation.isSuccess && extractedData && extractedData.walletAddresses.length === 0 && (
+            <Card>
+              <CardContent className="p-6 text-center">
+                <p className="text-gray-500">No cryptocurrency addresses found in the ransom note.</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Try including Bitcoin (starts with 1, 3, or bc1) or Ethereum (starts with 0x) addresses.
+                </p>
               </CardContent>
             </Card>
           )}

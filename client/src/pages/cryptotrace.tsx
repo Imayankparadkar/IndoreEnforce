@@ -9,6 +9,7 @@ import { Coins, FileText, AlertTriangle, Download, Network } from "lucide-react"
 import { motion } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { saveCryptoAnalysisToFirebase, saveWalletAnalysisToFirebase } from "@/lib/firebase-cryptotrace";
 import WalletAnalysis from "@/components/cryptotrace/WalletAnalysis";
 import TransactionTable from "@/components/cryptotrace/TransactionTable";
 import AttributionGraph from "@/components/cryptotrace/AttributionGraph";
@@ -46,11 +47,19 @@ export default function CryptoTrace() {
   // Extract wallet addresses and entities from ransom note
   const extractDataMutation = useMutation({
     mutationFn: async (note: string) => {
-      return apiRequest('/api/cryptotrace/extract', 'POST', { ransomNote: note });
+      const response = await apiRequest('POST', '/api/cryptotrace/extract', { ransomNote: note });
+      const data = await response.json();
+      return data;
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('Extraction successful:', data);
       setExtractedData(data);
+      // Store in Firebase
+      try {
+        await saveCryptoAnalysisToFirebase(ransomNote, data);
+      } catch (fbError) {
+        console.warn('Firebase storage failed:', fbError);
+      }
       queryClient.setQueryData(['/api/cryptotrace/extracted'], data);
     },
     onError: (error) => {
@@ -67,7 +76,8 @@ export default function CryptoTrace() {
       }, 200);
 
       try {
-        const result = await apiRequest('/api/cryptotrace/analyze-wallet', 'POST', { address });
+        const response = await apiRequest('POST', '/api/cryptotrace/analyze-wallet', { address });
+        const result = await response.json();
         clearInterval(progressInterval);
         setAnalysisProgress(100);
         return result;
@@ -76,8 +86,14 @@ export default function CryptoTrace() {
         throw error;
       }
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('Wallet analysis successful:', data);
+      // Store wallet analysis in Firebase
+      try {
+        await saveWalletAnalysisToFirebase(data);
+      } catch (fbError) {
+        console.warn('Firebase storage failed:', fbError);
+      }
       const currentData = queryClient.getQueryData<WalletAnalysisResult[]>(['/api/cryptotrace/wallet-analysis']) || [];
       const newData = [...currentData.filter(w => w.address !== data.address), data];
       queryClient.setQueryData(['/api/cryptotrace/wallet-analysis'], newData);
@@ -87,7 +103,9 @@ export default function CryptoTrace() {
   // Generate intelligence report
   const generateReportMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest('/api/cryptotrace/generate-report', 'POST', {});
+      const response = await apiRequest('POST', '/api/cryptotrace/generate-report', {});
+      const data = await response.json();
+      return data;
     }
   });
 
@@ -343,7 +361,7 @@ Do not contact law enforcement or your files will be permanently deleted.
               </TabsContent>
               
               <TabsContent value="osint">
-                <OSINTResults extractedData={extractedData} />
+                <OSINTResults extractedData={extractedData || undefined} />
               </TabsContent>
             </Tabs>
           )}

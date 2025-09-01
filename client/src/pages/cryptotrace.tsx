@@ -381,68 +381,6 @@ Do not contact law enforcement or your files will be permanently deleted.
               </TabsContent>
             </Tabs>
           )}
-
-          {/* Generate Report */}
-          {walletAnalysis && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Download className="mr-2 h-5 w-5" />
-                  Intelligence Report
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Generate a comprehensive intelligence report with all analysis results, 
-                  OSINT findings, and evidence log with SHA-256 hash chain.
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleGenerateReport}
-                    disabled={generateReportMutation.isPending}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {generateReportMutation.isPending ? 'Generating...' : 'Generate Intel Report'}
-                  </Button>
-                  {generateReportMutation.isSuccess && (
-                    <Button
-                      onClick={async () => {
-                        try {
-                          const currentWalletData = walletAnalysis?.find(w => w.address === selectedWallet);
-                          const response = await apiRequest('POST', '/api/cryptotrace/generate-report?download=true', {
-                            walletData: currentWalletData,
-                            extractedData
-                          });
-                          
-                          // Handle the PDF download
-                          const blob = await response.blob();
-                          const url = window.URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = `intel-pack-${selectedWallet?.substring(0, 8)}.pdf`;
-                          document.body.appendChild(a);
-                          a.click();
-                          window.URL.revokeObjectURL(url);
-                          document.body.removeChild(a);
-                        } catch (error) {
-                          console.error('PDF download failed:', error);
-                        }
-                      }}
-                      variant="outline"
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      Export Intel Pack (PDF)
-                    </Button>
-                  )}
-                </div>
-                {generateReportMutation.isSuccess && (
-                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-700 text-sm">
-                    ✓ Intelligence report generated successfully! Click "Export Intel Pack (PDF)" to download.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </motion.div>
       </div>
     </div>

@@ -7,8 +7,8 @@ export default function Dashboard() {
     <div className="space-y-6">
       <EnhancedDashboard />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <FirebaseStatus />
-        <StorageTest />
+        {/* <FirebaseStatus />
+        <StorageTest /> */}
       </div>
     </div>
   );

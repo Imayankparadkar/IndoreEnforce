@@ -21,9 +21,9 @@ export function Footer() {
       title: 'Platform',
       links: [
         { label: t('dashboard'), href: '/' },
-        { label: t('vajra'), href: '/vajra' },
-        { label: t('kautilya'), href: '/kautilya' },
-        { label: t('mayajaal'), href: '/mayajaal' },
+        { label: t('Trinetra- Real-Time Threat Map'), href: '/vajra' },
+        { label: t('Chanakya- AI Investigation Assistant'), href: '/kautilya' },
+        // { label: t('mayajaal'), href: '/mayajaal' },
         { label: t('brahmanet'), href: '/brahmanet' },
         { label: t('officer'), href: '/officer' }
       ]

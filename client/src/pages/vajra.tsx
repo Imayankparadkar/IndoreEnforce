@@ -256,7 +256,7 @@ export default function Vajra() {
             <div className="flex items-end">
               <Button onClick={handleUpdateMap} className="w-full bg-blue-600 hover:bg-blue-700">
                 <BarChart3 className="mr-2 h-4 w-4" />
-                Update Map
+                Search
               </Button>
             </div>
           </div>

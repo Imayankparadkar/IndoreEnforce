@@ -14,7 +14,7 @@ const navItems = [
   { path: "/", label: "Home", icon: BarChart3 },
   { path: "/vajra", label: "Trinetra", icon: Map },
   { path: "/kautilya", label: "Chanakya", icon: Brain },
-  { path: "/mayajaal", label: "Netrajal", icon: Network },
+  // { path: "/mayajaal", label: "Netrajal", icon: Network },
   { path: "/cryptotrace", label: "CryptoTrace", icon: Coins },
   { path: "/brahmanet", label: "BrahmaNet", icon: Users },
   { path: "/officer", label: "Officer Login", icon: ShieldQuestion },

@@ -65,10 +65,33 @@ export default function CaseAnalyzer({ onAnalysisComplete, onTimelineGenerated }
   });
 
   const generateMockAnalysis = (identifier: string, description: string) => {
-    const riskLevels = ['High', 'Medium', 'Low'];
-    const scamTypes = ['KYC Scam', 'UPI Reversal Fraud', 'Loan Scam', 'Job Scam'];
-    const origins = ['Rajasthan', 'Delhi', 'Mumbai', 'Bangalore'];
-    
+    // Rule-based check for your bike marketplace UPI scam case
+    if (
+      description.toLowerCase().includes("upi") &&
+      description.toLowerCase().includes("bike") &&
+      description.toLowerCase().includes("marketplace")
+    ) {
+      return {
+        riskLevel: "High",
+        scamType: "UPI Reversal Fraud",
+        matchCount: 5,
+        confidence: 92,
+        origin: "Delhi",
+        identifier,
+        recommendations: [
+          "Block UPI ID immediately",
+          "Contact telecom operator for number suspension",
+          "Issue public alert for this pattern",
+          "Coordinate with Banking authorities",
+        ],
+      };
+    }
+
+    // Default random mock analysis
+    const riskLevels = ["High", "Medium", "Low"];
+    const scamTypes = ["KYC Scam", "UPI Reversal Fraud", "Loan Scam", "Job Scam"];
+    const origins = ["Rajasthan", "Delhi", "Mumbai", "Bangalore"];
+
     const riskLevel = riskLevels[Math.floor(Math.random() * riskLevels.length)];
     const scamType = scamTypes[Math.floor(Math.random() * scamTypes.length)];
     const matchCount = Math.floor(Math.random() * 8);
@@ -84,10 +107,10 @@ export default function CaseAnalyzer({ onAnalysisComplete, onTimelineGenerated }
       identifier,
       recommendations: [
         "Block UPI ID immediately",
-        "Contact telecom operator for number suspension", 
+        "Contact telecom operator for number suspension",
         "Issue public alert for this pattern",
-        `Coordinate with ${Math.random() > 0.5 ? 'WhatsApp' : 'Banking'} authorities`
-      ]
+        `Coordinate with ${Math.random() > 0.5 ? "WhatsApp" : "Banking"} authorities`,
+      ],
     };
   };
 
